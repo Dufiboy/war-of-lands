@@ -1,0 +1,5 @@
+{
+  "type": "FeatureCollection",
+  "_note": "Placeholder. No verified zone data yet. Each feature needs: country, zone_type, altitude_limit, rule_authority, source_url, source_license, last_checked.",
+  "features": []
+}
