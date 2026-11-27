@@ -256,6 +256,8 @@ html[data-theme=light] .iconbtn{background:#efe3c4;color:#2a1f0e}
 .kw svg{flex:0 0 auto;margin-top:2px;color:var(--gold)}
 .kw b{display:block;font-weight:700;margin-bottom:1px}
 .gfoot{flex:0 0 auto;margin:12px 0 0}
+.gintro{font-size:14px;line-height:1.5;margin:4px 0 0;opacity:.9}
+.gsteps b{font-weight:700}
 html[data-theme=light] .kw{border-color:#0001}
 html[data-theme=light] .gh{color:#8a5f00}
 .splash{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;gap:10px;background:#1f3d2c;transition:opacity .6s}
@@ -1766,6 +1768,7 @@ function overlayHtml(){
         `<button class="menu-btn gold" data-act="menuai">Play vs Computer<small>Choose your deck</small></button>` +
         `<button class="menu-btn" data-act="menuhot">Two players<small>Hotseat, one device</small></button>` +
         `<button class="menu-btn" data-act="menuguide">Icon guide<small>What each icon means</small></button>` +
+        `<button class="menu-btn" data-act="menuinstall">Install the app<small>Add it to your phone or computer</small></button>` +
         `<div class="iconrow">` +
         `<button class="iconbtn${settings.banner ? '' : ' off'}" data-act="togglebanner" aria-label="Banner ${settings.banner ? 'on' : 'off'}" title="Banner">${ico(settings.banner ? 'bannerOn' : 'bannerOff', 26)}</button>` +
         `<button class="iconbtn${settings.sound ? '' : ' off'}" data-act="togglesound" aria-label="Sound ${settings.sound ? 'on' : 'off'}" title="Sound">${ico(settings.sound ? 'soundOn' : 'soundOff', 26)}</button>` +
@@ -1773,6 +1776,27 @@ function overlayHtml(){
         `<button class="iconbtn" data-act="cycletheme" aria-label="Theme: ${THEME_LABEL[settings.theme]}" title="Theme: ${THEME_LABEL[settings.theme]}">${ico({system: 'themeSystem', light: 'sun', dark: 'moon'}[settings.theme], 26)}</button>` +
         `</div>` +
         `</div>`;
+    }
+    if(menu.mode === 'install'){
+      const sec = (title, items) => `<div class="gh">${title}</div><ol class="gsteps">${items.map((t, i) => `<li><span class="gnum">${i + 1}</span><span>${t}</span></li>`).join('')}</ol>`;
+      return `<div class="box guide"><h2 class="gtitle">Install the app</h2><div class="gbody">` +
+        `<p class="gintro">Add War of Lands to your home screen, or install it on your computer, so it opens like an app.</p>` +
+        sec('iPhone (Safari)', [
+          'Open this game in Safari. It works best there.',
+          'Tap the Share button (square with an arrow).',
+          'Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.'
+        ]) +
+        sec('Android (Chrome)', [
+          'Open this game in Chrome.',
+          'Tap the menu (⋮) in the top right.',
+          'Tap <b>Install app</b> or <b>Add to Home screen</b>.'
+        ]) +
+        sec('Computer (Chrome or Edge)', [
+          'Open this game in your browser.',
+          'Click the install icon at the right end of the address bar.',
+          'Or open the browser menu and choose <b>Install War of Lands</b>.'
+        ]) +
+        `</div><button class="menu-btn gfoot" data-act="menuback">Back</button></div>`;
     }
     if(menu.mode === 'guide'){
       const steps = [
@@ -2010,6 +2034,7 @@ function handleMenu(act, el){
   else if(act === 'menuhot') menu = {mode: 'hot', picks: []};
   else if(act === 'menuback') menu = {mode: null, picks: []};
   else if(act === 'menuguide') menu = {mode: 'guide', picks: []};
+  else if(act === 'menuinstall') menu = {mode: 'install', picks: []};
   else if(act === 'togglebanner') settings.banner = !settings.banner;
   else if(act === 'cycletheme'){ settings.theme = THEME_NEXT[settings.theme]; applyTheme(); }
   else if(act === 'togglesound'){ settings.sound = !settings.sound; if(settings.sound) { unlockAudio(); sfx('chime'); } }
@@ -2061,7 +2086,7 @@ document.addEventListener('click', e => {
 
   if(act === 'log'){ $('#logdrawer').classList.toggle('open'); return; }
   if(act === 'closedetail'){ detailCard = null; render(); return; }
-  if(['menuai', 'menuhot', 'menuback', 'pickdeck', 'menuguide', 'togglebanner', 'cycletheme', 'togglesound', 'togglevib', 'resume'].includes(act)){ handleMenu(act, el); render(); return; }
+  if(['menuai', 'menuhot', 'menuback', 'pickdeck', 'menuguide', 'menuinstall', 'togglebanner', 'cycletheme', 'togglesound', 'togglevib', 'resume'].includes(act)){ handleMenu(act, el); render(); return; }
   if(act === 'new'){ G = null; menu = {mode: null, picks: []}; viewGrave = null; render(); return; }
   if(act === 'rematch' && G && G.over){ const v = G.vsAI, f = G.factions; viewGrave = null; startGame(v, 0, f); render(); return; }
   if(act === 'viewgrave'){ viewGrave = +el.dataset.p; render(); return; }
