@@ -1937,6 +1937,7 @@ function render(){
   if(!G){
     ['#phase', '#oppTag', '#oppHand', '#oppField', '#hint', '#myField', '#myTag', '#actions', '#myHand', '#log']
       .forEach(s => H(s).innerHTML = '');
+    $('#logdrawer').classList.remove('open'); // the log only belongs to a game, so close it on the start screen
     renderInspect();
     return;
   }
