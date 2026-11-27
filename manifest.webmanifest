@@ -1,0 +1,13 @@
+{
+  "name": "War of Lands",
+  "short_name": "War of Lands",
+  "description": "A Magic-inspired card game. Play against the computer or with a friend on one device.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1f3d2c",
+  "theme_color": "#1f3d2c",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

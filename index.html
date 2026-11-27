@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>War of Lands</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="War of Lands">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1f3d2c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
 <style>
 :root{--cw:clamp(50px,7.4vh,92px);--gold:#f5c75a;--ink:#f5ecd2;--red:#d8473a}
 *{box-sizing:border-box}
@@ -257,6 +263,10 @@ html[data-theme=light] .iconbtn{background:#efe3c4;color:#2a1f0e}
 .kw b{display:block;font-weight:700;margin-bottom:1px}
 .gfoot{flex:0 0 auto;margin:12px 0 0}
 .gintro{font-size:14px;line-height:1.5;margin:4px 0 0;opacity:.9}
+.guide-card{margin-top:4px}
+.gtag{font-size:10px;letter-spacing:.04em;background:var(--gold);color:#2a1c05;border-radius:999px;padding:1px 7px;vertical-align:middle;margin-left:4px}
+.gnote{font-size:14px;font-weight:700;background:#ffffff14;border-radius:12px;padding:12px;margin:10px 0 4px;text-align:center}
+html[data-theme=light] .gnote{background:#0001}
 .gsteps b{font-weight:700}
 html[data-theme=light] .kw{border-color:#0001}
 html[data-theme=light] .gh{color:#8a5f00}
@@ -730,6 +740,8 @@ const FAC_ICON = {goblin:emblem('goblin'), elf:emblem('elf'), zombie:emblem('zom
 const COIN = '<svg class="i" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>';
 const FAC_NAME = {goblin:'Goblins', elf:'Elves', zombie:'Zombies', knight:'Knights', dragon:'Dragons', merfolk:'Merfolk'};
 let menu = {mode: null, picks: []};
+let deferredInstall = null; // the browser's one-tap install prompt, when it offers one
+const isInstalled = () => !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone);
 let settings = {banner: true, theme: 'system', sound: true, vib: true};
 /* Short vibration on phones that support it (Android; iPhone Safari ignores it) */
 function buzz(ms){ if(settings.vib && navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
@@ -1778,24 +1790,22 @@ function overlayHtml(){
         `</div>`;
     }
     if(menu.mode === 'install'){
-      const sec = (title, items) => `<div class="gh">${title}</div><ol class="gsteps">${items.map((t, i) => `<li><span class="gnum">${i + 1}</span><span>${t}</span></li>`).join('')}</ol>`;
+      const ua = navigator.userAgent;
+      const dev = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ios' : /Android/.test(ua) ? 'android' : 'desktop';
+      const S = {
+        ios: ['iPhone or iPad', ['Open this game in Safari.', 'Tap the Share button (the square with an arrow).', 'Choose <b>Add to Home Screen</b>, then tap Add.']],
+        android: ['Android', ['Open this game in Chrome.', 'Tap the menu (⋮) in the top right.', 'Choose <b>Add to Home screen</b> or <b>Install app</b>.']],
+        desktop: ['Computer', ['Chrome or Edge: click the install icon at the right of the address bar.', 'Safari on a Mac: choose File, then Add to Dock.']]
+      };
+      const card = (k, i) => `<div class="guide-card"><div class="gh">${S[k][0]}${i === 0 ? ' <span class="gtag">this device</span>' : ''}</div><ol class="gsteps">${S[k][1].map((t, n) => `<li><span class="gnum">${n + 1}</span><span>${t}</span></li>`).join('')}</ol></div>`;
+      const status = isInstalled()
+        ? `<div class="gnote">Already installed on this device ✓</div>`
+        : deferredInstall ? `<button class="menu-btn gold" data-act="installnow">Install now</button>` : '';
       return `<div class="box guide"><h2 class="gtitle">Install the app</h2><div class="gbody">` +
-        `<p class="gintro">Add War of Lands to your home screen, or install it on your computer, so it opens like an app.</p>` +
-        sec('iPhone (Safari)', [
-          'Open this game in Safari. It works best there.',
-          'Tap the Share button (square with an arrow).',
-          'Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.'
-        ]) +
-        sec('Android (Chrome)', [
-          'Open this game in Chrome.',
-          'Tap the menu (⋮) in the top right.',
-          'Tap <b>Install app</b> or <b>Add to Home screen</b>.'
-        ]) +
-        sec('Computer (Chrome or Edge)', [
-          'Open this game in your browser.',
-          'Click the install icon at the right end of the address bar.',
-          'Or open the browser menu and choose <b>Install War of Lands</b>.'
-        ]) +
+        `<p class="gintro">Add War of Lands to your home screen or desktop, so it opens like an app.</p>` +
+        status +
+        [dev].concat(['ios', 'android', 'desktop'].filter(k => k !== dev)).map(card).join('') +
+        `<p class="gintro">Once added, it opens like any other app.</p>` +
         `</div><button class="menu-btn gfoot" data-act="menuback">Back</button></div>`;
     }
     if(menu.mode === 'guide'){
@@ -2035,6 +2045,7 @@ function handleMenu(act, el){
   else if(act === 'menuback') menu = {mode: null, picks: []};
   else if(act === 'menuguide') menu = {mode: 'guide', picks: []};
   else if(act === 'menuinstall') menu = {mode: 'install', picks: []};
+  else if(act === 'installnow'){ if(deferredInstall){ const d = deferredInstall; deferredInstall = null; d.prompt(); } }
   else if(act === 'togglebanner') settings.banner = !settings.banner;
   else if(act === 'cycletheme'){ settings.theme = THEME_NEXT[settings.theme]; applyTheme(); }
   else if(act === 'togglesound'){ settings.sound = !settings.sound; if(settings.sound) { unlockAudio(); sfx('chime'); } }
@@ -2086,7 +2097,7 @@ document.addEventListener('click', e => {
 
   if(act === 'log'){ $('#logdrawer').classList.toggle('open'); return; }
   if(act === 'closedetail'){ detailCard = null; render(); return; }
-  if(['menuai', 'menuhot', 'menuback', 'pickdeck', 'menuguide', 'menuinstall', 'togglebanner', 'cycletheme', 'togglesound', 'togglevib', 'resume'].includes(act)){ handleMenu(act, el); render(); return; }
+  if(['menuai', 'menuhot', 'menuback', 'pickdeck', 'menuguide', 'menuinstall', 'installnow', 'togglebanner', 'cycletheme', 'togglesound', 'togglevib', 'resume'].includes(act)){ handleMenu(act, el); render(); return; }
   if(act === 'new'){ G = null; menu = {mode: null, picks: []}; viewGrave = null; render(); return; }
   if(act === 'rematch' && G && G.over){ const v = G.vsAI, f = G.factions; viewGrave = null; startGame(v, 0, f); render(); return; }
   if(act === 'viewgrave'){ viewGrave = +el.dataset.p; render(); return; }
@@ -2159,6 +2170,9 @@ function warLogo(cls, idp){
   </svg>`;
 }
 
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if(menu.mode === 'install') render(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; if(menu.mode === 'install') render(); });
+
 /* Loading screen: five lands drop in, gather, then the steel-and-bronze shield forms and the title fades in. Tap to skip. */
 (function splash(){
   const names = ['Mountain','Forest','Swamp','Plains','Island'];
@@ -2172,6 +2186,14 @@ function warLogo(cls, idp){
   setTimeout(() => el.classList.add('out'), 3300);
   setTimeout(() => el.remove(), 3900);
 })();
+</script>
+<script>
+/* Offline support for the installed app. Quietly skipped where service workers are unavailable (for example, inside the preview). */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    try { navigator.serviceWorker.register('./sw.js').catch(function(){}); } catch (err) {}
+  });
+}
 </script>
 </body>
 </html>
