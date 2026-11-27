@@ -1762,6 +1762,7 @@ function actionsHtml(){
 
 function renderInspect(){
   const el = $('#inspect');
+  if(!G) preview = null; // no card preview on the start screen
   if(!preview){ el.innerHTML = G ? '<div class="ihint">Hover or hold a card to read it</div>' : ''; return; }
   const c = preview, land = c.type === 'land';
   const kind = land ? 'Land' : c.type === 'equipment' ? 'Equipment' : c.type === 'artifact' ? 'Artifact' : c.type === 'spell' ? ((c.effect && c.effect.aura) ? 'Aura' : 'Spell') : 'Creature';
