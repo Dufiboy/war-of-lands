@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>War of Lands</title>
+<style>
+:root{--cw:clamp(50px,7.4vh,92px);--gold:#f5c75a;--ink:#f5ecd2;--red:#d8473a}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#0e0c09;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+svg.i{display:block;flex:0 0 auto}
+
+/* ---- Table ---- */
+.table{position:fixed;inset:6px;display:flex;flex-direction:column;gap:6px;padding:8px 14px;border-radius:26px;
+  background:radial-gradient(ellipse at 50% 40%,#3c8062,#225639 70%,#153627);
+  box-shadow:inset 0 0 90px #0009,0 0 0 9px #5a3b22,0 0 0 11px #2a1a0c;overflow:hidden}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.iconbtn{width:44px;height:44px;border-radius:50%;border:0;background:#1d1a14e6;color:var(--ink);cursor:pointer;display:grid;place-items:center;box-shadow:0 3px 8px #000a}
+.iconbtn:hover{background:#2c2820}
+
+/* Phase track */
+.phase{display:flex;flex-direction:column;align-items:center;gap:4px}
+.phase .turnline{font-size:14px;font-weight:700}
+.track{display:flex;gap:4px;background:#0007;border-radius:999px;padding:4px}
+.track span{font-size:13px;padding:5px 12px;border-radius:999px;opacity:.55;white-space:nowrap}
+.track span.on{background:var(--gold);color:#2a1c05;opacity:1;font-weight:700}
+
+.field{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.lane{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;min-height:calc(var(--cw)*.9)}
+.empty{color:#ffffff44;font-size:13px}
+.hand-top,.hand{display:flex;justify-content:center;align-items:flex-end;min-height:calc(var(--cw)*1.0);padding-top:4px}
+.hand{min-height:calc(var(--cw)*1.45);padding-top:16px}
+.hint{align-self:center;background:#0008;border-radius:999px;padding:6px 16px;font-size:14px;min-height:30px;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+.mybar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.actions{display:flex;gap:8px}
+
+/* Land pile */
+.pile{position:relative;width:calc(var(--cw)*.62 + 9px);height:calc(var(--cw)*.86 + 9px);flex:0 0 auto;margin-right:8px}
+.pile .layer{position:absolute;width:calc(var(--cw)*.62);height:calc(var(--cw)*.86);border-radius:10px;border:2px dashed #e8dcaa;background:#4a3d27;box-shadow:0 2px 6px #0008}
+.pile .card{position:absolute;left:0;top:0;z-index:5}
+
+/* Seats */
+.tag{display:flex;gap:12px;align-items:center;background:#0007;padding:5px 16px 5px 5px;border-radius:999px;width:max-content;max-width:100%;margin:0 8px 0 auto;transition:box-shadow .2s}
+.tag.active{box-shadow:0 0 0 2px var(--gold),0 0 16px #f5c75a55}
+.life{width:52px;height:52px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,#ff7a6b,#b52d22 70%,#6d150f);box-shadow:0 3px 8px #000a,inset 0 0 0 2px #0004;color:#fff;flex:0 0 auto}
+.life small{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.9;line-height:1}
+.life b{font-size:22px;line-height:1.05}
+.life.low{animation:lowlife 1s infinite}
+@keyframes lowlife{0%,100%{box-shadow:0 0 0 0 #ff4b3e}50%{box-shadow:0 0 0 8px #ff4b3e55}}
+.pinfo{display:flex;flex-direction:column;gap:2px}
+.pname{font-weight:700;font-size:15px}
+.pstats{display:flex;gap:6px;font-size:14px;align-items:center}
+
+/* Action buttons */
+.act{min-width:66px;height:58px;padding:6px 8px;border-radius:14px;border:0;background:#1d1a14;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;box-shadow:0 3px 8px #000a;transition:transform .12s,box-shadow .2s,opacity .2s}
+@media (hover:hover){.act:hover:not(:disabled){transform:translateY(-2px)}}
+.act:disabled{opacity:.32;cursor:default}
+.act span{white-space:nowrap}
+.act.glow{background:var(--gold);color:#2a1c05;font-weight:700;box-shadow:0 0 0 2px #fff8,0 0 16px var(--gold)}
+.act.danger{background:#4a2a22}
+
+/* Cards */
+.card{position:relative;width:var(--cw);height:calc(var(--cw)*1.4);border-radius:12px;flex:0 0 auto;
+  background:linear-gradient(#fbf3d9,#ecdfb6);border:2px solid #6e5a33;box-shadow:0 4px 10px #0009;
+  display:flex;flex-direction:column;padding:5px;transition:transform .2s,box-shadow .2s,opacity .2s}
+.card.goblin{background:linear-gradient(#eef7d0,#cfe39a);border-color:#4d7a22}
+.card.elf{background:linear-gradient(#e1f6f0,#b8e2d6);border-color:#23685b}
+.card.land{border-style:dashed}
+.card .art{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;font-size:calc(var(--cw)*.42);border-radius:8px;background:#d9cfa8}
+.card.goblin .art{background:radial-gradient(#d9f0a0,#6a962a)}
+.card.elf .art{background:radial-gradient(#c3f0e2,#2f8a77)}
+.card.land .art{background:radial-gradient(#b8a777,#4a3d27)}
+.card .tline{font-size:calc(var(--cw)*.105);font-weight:800;text-transform:uppercase;letter-spacing:.05em;text-align:center;color:#2b2216;background:#0000001f;border-radius:4px;margin-top:3px;padding:1px 0;white-space:nowrap}
+.card.mini .tline{display:none}
+.card.legend{box-shadow:0 0 0 2px #f5c75a,0 0 10px #f5c75a88}
+.card.legend .tline{background:#f5c75a;color:#2b2216}
+.card.legend .tline{letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
+.lane:has(> :nth-child(6)){--cw:calc(clamp(50px,7.4vh,92px)*.85)}
+.card.lunge-up{animation:lungeUp .55s ease-out}
+.card.lunge-down{animation:lungeDown .55s ease-out}
+@keyframes lungeUp{0%{transform:translateY(0)}35%{transform:translateY(-22px) scale(1.08)}100%{transform:translateY(0)}}
+@keyframes lungeDown{0%{transform:translateY(0)}35%{transform:translateY(22px) scale(1.08)}100%{transform:translateY(0)}}
+.card.ghost{animation:ghostFade .6s ease-in forwards;pointer-events:none}
+@keyframes ghostFade{to{opacity:0;transform:scale(.5) translateY(14px)}}
+.card .ench{position:absolute;top:calc(var(--cw)*.3);right:-6px;font-size:calc(var(--cw)*.14);background:#fff;border-radius:999px;padding:0 4px;z-index:2;box-shadow:0 1px 4px #0008}
+.card .nm{font-size:calc(var(--cw)*.14);font-weight:700;text-align:center;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#2b2216}
+.card .pt{display:flex;justify-content:space-between;font-weight:800;font-size:calc(var(--cw)*.15);margin-top:2px;color:#2b2216}
+.card .cost{position:absolute;top:-8px;left:-8px;width:calc(var(--cw)*.3);height:calc(var(--cw)*.3);border-radius:50%;background:#1b1409;color:var(--gold);display:grid;place-items:center;font-weight:800;font-size:calc(var(--cw)*.15);border:2px solid var(--gold);z-index:2}
+.card .badge{position:absolute;top:-6px;right:-6px;font-size:calc(var(--cw)*.2);background:#fff;border-radius:50%;width:calc(var(--cw)*.3);height:calc(var(--cw)*.3);display:grid;place-items:center;box-shadow:0 1px 4px #0008;z-index:2}
+.card .dmg{position:absolute;bottom:calc(var(--cw)*.2);left:50%;transform:translateX(-50%);background:var(--red);color:#fff;border-radius:999px;padding:0 6px;font-weight:800;font-size:calc(var(--cw)*.14);z-index:2}
+.card .sick{position:absolute;bottom:-6px;left:-6px;font-size:calc(var(--cw)*.2);background:#fff;border-radius:50%;width:calc(var(--cw)*.3);height:calc(var(--cw)*.3);display:grid;place-items:center;z-index:2}
+.card.mini{width:calc(var(--cw)*.62);height:calc(var(--cw)*.86);padding:3px}
+.card.mini .nm,.card.mini .pt,.card.mini .badge{display:none}
+.card.clickable{cursor:pointer}
+@media (hover:hover){.hand .card.clickable:hover{transform:translateY(-16px) scale(1.1);z-index:5}}
+@media (hover:hover){.field .card.clickable:hover{transform:translateY(-4px) scale(1.04)}}
+.card.tapped{transform:rotate(10deg);opacity:.82}
+.card.sel{box-shadow:0 0 0 3px var(--gold),0 0 18px var(--gold)}
+.card.blocker{box-shadow:0 0 0 3px #6fb8ff,0 0 18px #6fb8ff}
+.card.target{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px #ff6a5a}50%{box-shadow:0 0 0 6px #ff6a5a88,0 0 20px #ff6a5a}}
+.card.dim{filter:saturate(.4) brightness(.8);opacity:.6}
+.card.back{width:calc(var(--cw)*.58);height:calc(var(--cw)*.82);margin:0 -10px;background:repeating-linear-gradient(45deg,#5a3f22,#5a3f22 9px,#40291a 9px,#40291a 18px);border:2px solid #2d1d0e;box-shadow:0 3px 8px #000a}
+.hand .card:not(.back){margin:0 -8px}
+
+.card .art svg,.inspect .ibig svg{width:100%;height:100%;display:block;border-radius:8px}
+/* Inspect panel */
+.inspect{position:absolute;left:20px;top:50%;transform:translateY(-50%);width:200px;background:#15110bf2;border-radius:16px;padding:12px;font-size:13px;box-shadow:0 10px 30px #000b;z-index:3}
+.inspect .ibig{height:140px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:70px;background:#4a3d27}
+.inspect .ibig.goblin{background:radial-gradient(#d9f0a0,#6a962a)}
+.inspect .ibig.elf{background:radial-gradient(#c3f0e2,#2f8a77)}
+.inspect .iname{font-weight:800;font-size:16px;margin-top:8px}
+.inspect .itype{opacity:.8;margin-top:2px}
+.inspect .ipt{font-weight:700;margin-top:4px}
+.inspect .itext{margin-top:8px;line-height:1.4;opacity:.92}
+.inspect .ihint{opacity:.6;text-align:center;padding:40px 0}
+
+/* Log drawer */
+.logdrawer{position:absolute;right:20px;top:70px;bottom:20px;width:270px;background:#15110bf5;border-radius:16px;padding:12px;overflow:auto;display:none;z-index:4;font-size:12px;box-shadow:0 10px 30px #000b}
+.logdrawer.open{display:block}
+.logdrawer div{padding:4px 0;border-bottom:1px solid #ffffff14}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.overlay.hidden{display:none}
+.overlay.solid{background:#0e0c09}
+.box{background:#2a2319;border-radius:18px;padding:22px;width:min(360px,92vw);text-align:center;box-shadow:0 12px 40px #000c}
+.box h2{margin:4px 0 10px}
+.big{font-size:52px;line-height:1.1}
+.menu-btn{display:block;width:100%;margin:10px 0;padding:14px;font-size:17px;border-radius:12px;border:0;background:#3b3020;color:var(--ink);cursor:pointer}
+.menu-btn.gold{background:var(--gold);color:#2a1c05;font-weight:700}
+.menu-btn small{display:block;font-size:12px;font-weight:400;opacity:.75;margin-top:2px}
+.legend{font-size:13px;opacity:.85;margin-top:14px;line-height:1.9}
+
+.pile{margin-bottom:22px}
+.mtns{position:absolute;left:50%;transform:translateX(-50%);bottom:-20px;display:flex;flex-wrap:wrap;justify-content:center;gap:2px;width:86px;z-index:6}
+.mtn{color:#ffffff55;display:inline-flex}
+.mtn.on{color:var(--gold);filter:drop-shadow(0 0 3px #f5c75a88)}
+.mtn.tapped{color:#ffffff33;transform:rotate(90deg);margin:0 4px}
+.card.tapped{filter:grayscale(.45)}
+.card .tapb{position:absolute;bottom:-6px;right:-6px;width:calc(var(--cw)*.3);height:calc(var(--cw)*.3);border-radius:50%;background:#fff;display:grid;place-items:center;z-index:2;color:#2b2216;box-shadow:0 1px 4px #0008}
+.count{align-self:center;background:#0008;border-radius:999px;padding:3px 10px;font-weight:700;font-size:14px;margin-left:8px;white-space:nowrap}
+.preview{align-self:center;font-size:13px;background:#0008;border-radius:12px;padding:6px 12px;text-align:center;max-width:94%}
+.preview:empty{display:none}
+.card:not(.mini) .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.card:not(.mini) .abil{height:calc(var(--cw)*.17);overflow:hidden;align-items:center}
+.card:not(.mini) .tline{height:calc(var(--cw)*.13);line-height:calc(var(--cw)*.13);overflow:hidden;padding:0 2px;box-sizing:border-box}
+.card:not(.mini) .pt{height:calc(var(--cw)*.17);align-items:center;overflow:hidden}
+.card:not(.mini) .nm{height:calc(var(--cw)*.15);line-height:calc(var(--cw)*.15)}
+.card.spent::after{content:'Land played';position:absolute;left:0;right:0;top:40%;text-align:center;background:#000d;color:#fff;font-size:10px;font-weight:700;padding:3px 0;z-index:4}
+.lowtag{color:#ff8a7a;font-size:12px;font-weight:700}
+.abil{display:flex;justify-content:center;gap:4px;margin-top:2px;color:#2b2216}
+.abil svg{width:calc(var(--cw)*.17);height:calc(var(--cw)*.17)}
+.box.detail{width:min(340px,92vw)}
+.dbig{width:160px;height:200px;margin:0 auto 10px;border-radius:12px;overflow:hidden;background:#4a3d27}
+.dbig svg{width:100%;height:100%;display:block}
+.dbig.goblin{background:#6a962a}
+.dbig.elf{background:#2f8a77}
+.dtype{opacity:.8;margin-top:2px}
+.dtext{line-height:1.45;margin:10px 0;opacity:.95}
+.abrows{display:flex;flex-direction:column;gap:8px;text-align:left;margin-bottom:6px}
+.abrow{display:flex;align-items:center;gap:10px;font-size:14px}
+.abrow svg{flex:0 0 auto}
+@media (max-width:900px){.inspect{display:none}.logdrawer{width:auto;left:12px;right:12px;top:64px;bottom:auto;max-height:38%}}
+@media (max-width:700px){
+  .table{inset:4px;border-radius:18px;padding:6px 8px;box-shadow:inset 0 0 60px #0009}
+  .topbar{gap:6px}
+  .iconbtn{width:38px;height:38px}
+  .track span{padding:4px 8px;font-size:12px}
+  .phase .turnline{font-size:13px}
+  .mybar{flex-direction:column;align-items:stretch;gap:6px}
+  .tag{padding:4px 12px 4px 4px;gap:8px;align-self:center}
+  .life{width:44px;height:44px}
+  .life b{font-size:18px}
+  .pname{font-size:14px}
+  .actions{width:100%;gap:6px}
+  .act{flex:1;min-width:0;height:54px;font-size:11px;border-radius:12px}
+  .act.wide{flex:1.6;padding:6px 2px}
+  .hand{min-height:calc(var(--cw)*1.3);padding-top:10px}
+}
+.mulhand{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.stackrow{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:12px}
+.stackrow span{font-weight:700}
+[data-act],[data-card],button{touch-action:manipulation}
+.lcard{position:absolute;left:0;top:0}
+.lcard .card.tapped{transform:rotate(90deg);opacity:.75}
+.more{position:absolute;top:-8px;right:-8px;z-index:9;background:#1b1409;color:var(--gold);border-radius:999px;padding:0 6px;font-weight:800;font-size:12px;line-height:18px}
+.dpile{position:relative;width:calc(var(--cw)*.5);height:calc(var(--cw)*.7);flex:0 0 auto;margin-left:6px}
+.dback{position:absolute;left:0;top:0;width:100%;height:100%;border-radius:8px;border:2px solid #2d1d0e;background:repeating-linear-gradient(45deg,#5a3f22 0 9px,#40291a 9px 18px);box-shadow:0 2px 6px #0008}
+.dback+.dback{left:3px;top:3px}
+.dcount{position:absolute;right:-8px;bottom:-8px;z-index:3;background:#1b1409;color:var(--gold);border-radius:999px;padding:0 7px;font-weight:800;font-size:13px;line-height:20px}
+.card.zombie{background:linear-gradient(#e6e9dc,#c3cab0);border-color:#4a5e3a}
+.card.zombie .art{background:radial-gradient(#d4dcc4,#4a5e3a)}
+.card.knight{background:linear-gradient(#fbf6dc,#e6d9a0);border-color:#8a7a2a}
+.card.knight .art{background:radial-gradient(#f3ecc8,#8a7a2a)}
+.inspect .ibig.knight{background:radial-gradient(#f3ecc8,#8a7a2a)}
+.dbig.knight{background:#8a7a2a}
+.card.dragon{background:linear-gradient(#f7e0d4,#e7b29a);border-color:#8a2a1a}
+.card.dragon .art{background:radial-gradient(#f3c9b0,#8a2a1a)}
+.inspect .ibig.dragon{background:radial-gradient(#f3c9b0,#8a2a1a)}
+.dbig.dragon{background:#8a2a1a}
+.card.merfolk{background:linear-gradient(#e2f8f5,#b5e6df);border-color:#23787f}
+.card.merfolk .art{background:radial-gradient(#c8f1ee,#2a7d86)}
+.inspect .ibig.merfolk,.dbig.merfolk{background:radial-gradient(#c8f1ee,#2a7d86)}
+.life{position:relative}
+.fx{position:absolute;left:50%;top:-4px;transform:translateX(-50%);font-weight:900;color:#ff8a7a;font-size:16px;text-shadow:0 2px 4px #000;animation:floatUp 1.1s forwards;z-index:9;pointer-events:none;white-space:nowrap}
+.card .fx{font-size:calc(var(--cw)*.24)}
+@keyframes floatUp{to{transform:translate(-50%,-28px);opacity:0}}
+.gpile{position:relative;width:calc(var(--cw)*.5);height:calc(var(--cw)*.7);flex:0 0 auto;margin-left:6px;cursor:pointer}
+.dback.g{background:repeating-linear-gradient(135deg,#3b2f4f 0 9px,#271f35 9px 18px);border-color:#140f1d}
+.banner{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;background:#1b1409e6;color:var(--gold);padding:12px 24px;border-radius:14px;font-weight:800;font-size:20px;transition:opacity .25s,transform .25s;z-index:50;text-align:center;white-space:nowrap}
+.banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.banner .bt{font-size:20px;font-weight:800}
+.banner .bs{font-size:14px;font-weight:600;color:#e9dcb8;margin-top:4px;white-space:normal;max-width:78vw}
+.arrows{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:40}
+@media (max-width:700px){.track span:nth-child(-n+2){display:none}.track span{font-size:11px;padding:3px 7px}}
+.card[data-act]{-webkit-tap-highlight-color:transparent}
+.card[data-act]:active{filter:brightness(1.2)}
+.act:active{filter:brightness(1.2)}
+/* A full table keeps each row on one line (scrolls sideways) so it can't cover the buttons */
+.lane{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;padding:12px 8px 6px;max-width:100%;scrollbar-width:none}
+.lane::-webkit-scrollbar{display:none}
+.lane{gap:14px} /* room for tapped (tilted) creatures so neighbours never touch */
+.lane > :first-child{margin-left:auto}
+.lane > :last-child{margin-right:auto}
+.actions{position:relative;z-index:10}
+/* Card animations */
+.card.arrive{animation:arrive .4s cubic-bezier(.2,.9,.3,1.25)}
+@keyframes arrive{from{transform:translateY(-22px) scale(.55);opacity:0}to{transform:none;opacity:1}}
+.card.hit{animation:hit .35s ease-out}
+@keyframes hit{0%,100%{transform:none}20%{transform:translateX(-6px) rotate(-3deg)}40%{transform:translateX(6px) rotate(3deg)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.card.hit::before{content:'';position:absolute;inset:-3px;border-radius:14px;pointer-events:none;background:#ff4b3e;opacity:0;animation:flash .4s ease-out;z-index:1}
+@keyframes flash{0%{opacity:.55}100%{opacity:0}}
+/* Loading screen: the five basic lands drop in */
+.emb{width:1em;height:1em;vertical-align:-.12em;fill:currentColor;display:inline-block}
+.settingsrow{display:flex;gap:8px;width:100%;flex-wrap:wrap}
+.win-emb .emb{width:52px;height:52px;display:block;margin:0 auto 6px}
+.settingsrow .menu-btn{flex:1;margin:0;padding:10px 4px}
+.iconrow{display:flex;gap:10px;justify-content:center;width:100%;margin-top:6px}
+.iconbtn{width:60px;height:60px;border-radius:14px;border:0;background:#3b3020;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.iconbtn.off{opacity:.45}
+html[data-theme=light] .iconbtn{background:#efe3c4;color:#2a1f0e}
+/* How-to-play panel: header and footer stay put, the middle scrolls */
+.box.guide{width:min(440px,94vw);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;text-align:left;padding:18px 18px 12px}
+.guide .gtitle{text-align:center;margin:2px 0 4px}
+.gbody{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;min-height:0;flex:1 1 auto;padding-right:6px}
+.gh{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin:16px 0 4px}
+.gsteps{list-style:none;margin:0;padding:0}
+.gsteps li{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.45;margin:8px 0}
+.gnum{flex:0 0 24px;height:24px;border-radius:50%;background:var(--gold);color:#2a1c05;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+.gtips{list-style:none;margin:0;padding:0}
+.gtips li{position:relative;padding-left:16px;font-size:14px;line-height:1.45;margin:7px 0}
+.gtips li::before{content:'';position:absolute;left:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.kw{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #ffffff14;font-size:14px;line-height:1.4}
+.kw svg{flex:0 0 auto;margin-top:2px;color:var(--gold)}
+.kw b{display:block;font-weight:700;margin-bottom:1px}
+.gfoot{flex:0 0 auto;margin:12px 0 0}
+html[data-theme=light] .kw{border-color:#0001}
+html[data-theme=light] .gh{color:#8a5f00}
+.splash{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;gap:10px;background:#1f3d2c;transition:opacity .6s}
+.splash.out{opacity:0;pointer-events:none}
+.splash-card{width:56px;height:78px;border-radius:9px;background:#e9e1c4;border:2px solid #2b2216;display:flex;flex-direction:column;align-items:center;padding:4px;box-sizing:border-box;animation:landDrop .5s calc(var(--i)*.14s) cubic-bezier(.2,.9,.3,1.2) both,gather .45s calc(1.3s + var(--i)*.1s) forwards}
+.splash-card svg{width:100%;height:calc(100% - 14px);border-radius:5px;background:#c8b98a}
+.splash-card span{font-size:9px;font-weight:800;color:#2b2216;margin-top:2px}
+@keyframes gather{from{transform:none;opacity:1}to{transform:translate(var(--gx),0) scale(.5);opacity:0}}
+@keyframes landDrop{from{transform:translateY(-120px) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+.splash-cards{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:10px}
+.splash-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:200px;text-align:center}
+.splash-shield{width:200px;height:240px;display:block;overflow:visible}
+.menu-shield{width:110px;height:132px;display:block;margin:0 auto 6px;overflow:visible}
+.splash .wedge{opacity:0;animation:wedgeIn .35s ease forwards;animation-delay:var(--d)}
+.splash .w{opacity:0;transform:translate(var(--fx),var(--fy));animation:flyIn .6s cubic-bezier(.2,.8,.3,1) forwards;animation-delay:var(--d)}
+.splash-title{font-family:Georgia,serif;font-size:22px;color:#b08d57;margin-top:12px;opacity:0;animation:wedgeIn .5s ease forwards;animation-delay:2.5s}
+@keyframes wedgeIn{to{opacity:1}}
+@keyframes flyIn{to{opacity:1;transform:translate(0,0)}}
+@media (prefers-reduced-motion: reduce){.splash *{animation:none!important}.splash-cards{display:none}.splash .wedge,.splash .w,.splash-title{opacity:1}.splash .w{transform:none}}
+
+/* Life total reacts to damage and healing */
+.life{position:relative}
+.life.hitlife{animation:lifeHit .5s ease-out}
+.life.healed{animation:lifeHeal .6s ease-out}
+.life .fx{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-weight:900;font-size:15px;color:#fff;text-shadow:0 1px 3px #000;white-space:nowrap;pointer-events:none;animation:floatUp 1s ease-out forwards}
+@keyframes lifeHit{0%{transform:scale(1);box-shadow:0 0 0 0 #ff4b3e}30%{transform:scale(1.12);box-shadow:0 0 0 8px #ff4b3e55}100%{transform:scale(1);box-shadow:0 0 0 0 #ff4b3e00}}
+@keyframes lifeHeal{0%{transform:scale(1);box-shadow:0 0 0 0 #7fe08a}30%{transform:scale(1.1);box-shadow:0 0 0 8px #7fe08a66}100%{transform:scale(1);box-shadow:0 0 0 0 #7fe08a00}}
+@keyframes floatUp{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-26px)}}
+@media (prefers-reduced-motion: reduce){.life.hitlife,.life.healed,.life .fx{animation:none}}
+@media (prefers-reduced-motion: reduce){.card.arrive,.card.hit,.card.hit::before,.card.lunge-up,.card.lunge-down,.card.ghost{animation:none}}
+
+/* Light theme (dark is the default) */
+html[data-theme=light]{--ink:#2a1f0e}
+html[data-theme=light] body{background:#efe6cf}
+html[data-theme=light] .table{background:radial-gradient(ellipse at 50% 40%,#8fd3a8,#5fae84 70%,#3d8a63)}
+html[data-theme=light] .iconbtn{background:#fffaf0;color:#2a1f0e;box-shadow:0 3px 8px #0002}
+html[data-theme=light] .iconbtn:hover{background:#f3ead6}
+html[data-theme=light] .track{background:#ffffffa0}
+html[data-theme=light] .empty{color:#0008}
+html[data-theme=light] .hint,html[data-theme=light] .count,html[data-theme=light] .preview{background:#fffaf0e6;color:#2a1f0e}
+html[data-theme=light] .tag{background:#fffaf0cc}
+html[data-theme=light] .act{background:#fffaf0;color:#2a1f0e;box-shadow:0 3px 8px #0002}
+html[data-theme=light] .act.danger{background:#f2d3c9}
+html[data-theme=light] .inspect,html[data-theme=light] .logdrawer{background:#fffaf0f5;color:#2a1f0e}
+html[data-theme=light] .logdrawer div{border-bottom-color:#0001}
+html[data-theme=light] .box{background:#fffaf0;color:#2a1f0e;box-shadow:0 12px 40px #0003}
+html[data-theme=light] .menu-btn{background:#efe3c4;color:#2a1f0e}
+html[data-theme=light] .menu-btn.gold{background:var(--gold);color:#2a1c05}
+html[data-theme=light] .banner{background:#fffaf0ee;color:#7a5200}
+html[data-theme=light] .banner .bs{color:#5a4420}
+html[data-theme=light] .overlay{background:#0006}
+html[data-theme=light] .overlay.solid{background:#efe6cf}
+html[data-theme=light] .legend{color:#2a1f0e}
+html[data-theme=light] .pile .layer{background:#d9cba8;border-color:#7a6a40}
+html[data-theme=light] .mtn{color:#0003}
+html[data-theme=light] .mtn.tapped{color:#0002}
+html[data-theme=light] .mtn.on{color:#b7791f;filter:none}
+html[data-theme=light] .lowtag{color:#b3261e}
+/* Notches and rounded screen corners */
+.table{inset:calc(6px + env(safe-area-inset-top,0px)) calc(6px + env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) calc(6px + env(safe-area-inset-left,0px))}
+@media (max-width:700px){.table{inset:calc(4px + env(safe-area-inset-top,0px)) calc(4px + env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) calc(4px + env(safe-area-inset-left,0px))}}
+/* Phones in landscape: shorter cards and controls so the whole table fits */
+@media (orientation:landscape) and (max-height:520px){
+  :root{--cw:clamp(40px,12vh,64px)}
+  .topbar .iconbtn{width:34px;height:34px}
+  .act{height:44px;min-width:54px;font-size:11px}
+  .hint{font-size:12px;min-height:24px;padding:3px 12px}
+  .hand{min-height:calc(var(--cw)*1.2);padding-top:6px}
+.hand{flex-wrap:wrap;row-gap:6px}
+  .table{padding:4px 10px}
+}
+/* Bigger text for readability */
+.track span{font-size:14px}
+.hint{font-size:15px}
+.card .nm{font-size:calc(var(--cw)*.15)}
+.card .pt{font-size:calc(var(--cw)*.18)}
+.card .abil svg{width:calc(var(--cw)*.2);height:calc(var(--cw)*.2)}
+.legend,.abrow{font-size:15px}
+/* Faction symbol on creatures (so factions aren't only told apart by colour) */
+.card .fac{position:absolute;top:-6px;right:-6px;width:calc(var(--cw)*.3);height:calc(var(--cw)*.3);border-radius:50%;background:#fff;display:grid;place-items:center;font-size:calc(var(--cw)*.18);box-shadow:0 1px 4px #0008;z-index:2}
+/* Card faces: match the basic land colours; larger pictures */
+.spark{position:fixed;left:0;top:0;width:10px;height:10px;border-radius:50%;background:#f5c75a;box-shadow:0 0 8px 3px #f5c75a88;pointer-events:none;z-index:50}
+.card .ctr{position:absolute;top:calc(var(--cw)*.3);left:-6px;font-size:calc(var(--cw)*.14);background:#2b2216;color:#f5c75a;border-radius:999px;padding:0 4px;z-index:2}
+.card.goblin{background:linear-gradient(#f3d9c9,#e8c0a8);border-color:#8a3b24}
+.card.goblin .art{background:radial-gradient(#e8c0a8,#8a3b24)}
+.inspect .ibig.goblin,.dbig.goblin{background:radial-gradient(#e8c0a8,#8a3b24)}
+.card.dragon{background:linear-gradient(#f5dcd0,#f0c4b4);border-color:#7a2a1d}
+.card.dragon .art{background:radial-gradient(#f0c4b4,#7a2a1d)}
+.inspect .ibig.dragon,.dbig.dragon{background:radial-gradient(#f0c4b4,#7a2a1d)}
+.card.elf{background:linear-gradient(#dff3e3,#b9e6bf);border-color:#2f6b3a}
+.card.elf .art{background:radial-gradient(#b9e6bf,#2f6b3a)}
+.inspect .ibig.elf,.dbig.elf{background:radial-gradient(#b9e6bf,#2f6b3a)}
+.card.zombie{background:linear-gradient(#e8ecdf,#cfd6bf);border-color:#4a5a33}
+.card.zombie .art{background:radial-gradient(#cfd6bf,#4a5a33)}
+.inspect .ibig.zombie,.dbig.zombie{background:radial-gradient(#cfd6bf,#4a5a33)}
+.card.knight{background:linear-gradient(#fbf6dc,#f7efc9);border-color:#b59a3a}
+.card.knight .art{background:radial-gradient(#f7efc9,#b59a3a)}
+.inspect .ibig.knight,.dbig.knight{background:radial-gradient(#f7efc9,#b59a3a)}
+.card.merfolk{background:linear-gradient(#e2f6fa,#bfe6f0);border-color:#2a7d86}
+.card.merfolk .art{background:radial-gradient(#bfe6f0,#2a7d86)}
+.inspect .ibig.merfolk,.dbig.merfolk{background:radial-gradient(#bfe6f0,#2a7d86)}
+.card:not(.mini) .nm{font-size:calc(var(--cw)*.125)}
+.card .tline{font-size:calc(var(--cw)*.09);margin-top:2px}
+.card .pt{font-size:calc(var(--cw)*.13);margin-top:1px}
+.abil svg{width:calc(var(--cw)*.14);height:calc(var(--cw)*.14)}
+.card:not(.mini) .art{flex:1 1 0%;min-height:0}
+</style>
+</head>
+<body>
+
+<div class="table">
+  <header class="topbar">
+    <button class="iconbtn" data-act="new" title="Back to menu" aria-label="Back to menu"><span id="homeIcon"></span></button>
+    <div id="phase"></div>
+    <button class="iconbtn" data-act="log" title="Game log" aria-label="Game log"><span id="logIcon"></span></button>
+  </header>
+
+  <div id="oppTag" style="display:flex;justify-content:center"></div>
+  <div id="oppHand" class="hand-top"></div>
+  <div id="oppField" class="field"></div>
+
+  <div id="hint" class="hint"></div>
+  <div id="preview" class="preview"></div>
+
+  <div id="myField" class="field"></div>
+  <div class="mybar">
+    <div id="myTag"></div>
+    <div id="actions" class="actions"></div>
+  </div>
+  <div id="myHand" class="hand"></div>
+
+  <aside id="inspect" class="inspect"></aside>
+  <aside id="logdrawer" class="logdrawer" title="Tap to close" onclick="this.classList.remove('open')"><div id="log"></div></aside>
+  <div id="banner" class="banner"></div>
+  <svg id="arrows" class="arrows"></svg>
+  <div id="overlay" class="overlay"></div>
+</div>
+
+<script>
+const POOL = {
+  goblin: [
+    {name:"Scrap Runner",   art:"🏃", cost:1, type:"creature", p:2, t:1, haste:true, menace:true, text:"Haste. Menace: needs two blockers."},
+    {name:"Brakka, Warlord", art:"👹", cost:5, type:"creature", p:4, t:4, haste:true, menace:true, legendary:true, lord:{p:1,t:0}, text:"Legendary. Haste, menace. Your other creatures get +1/+0."},
+    {name:"Fuse Bomber",    art:"💣", cost:2, type:"creature", p:2, t:2, onEnter:{dmgPlayer:1}, text:"When it arrives: deal 1 damage to the opponent."},
+    {name:"Smelter Brute",  art:"🔥", cost:3, type:"creature", p:4, t:3, poison:true, text:"Deathtouch: any creature it damages in combat dies."},
+    {name:"Warchief Krazg", art:"👹", cost:4, type:"creature", p:4, t:4, haste:true, doubleStrike:true, text:"Haste. Double strike: deals damage in the first-strike step and again after."},
+    {name:"Junk Golem",     art:"🤖", cost:5, type:"creature", p:5, t:5, trample:true, text:"Trample: damage beyond the blocker goes to the player."},
+    {name:"Spark Flick",    art:"⚡", cost:1, type:"spell", instant:true, effect:{dmgCreature:2}, text:"Instant. Deal 2 damage to a creature."},
+    {name:"Greedy Haul",    art:"💰", cost:2, type:"spell", effect:{draw:2}, text:"Draw 2 cards."},
+    {name:"Blast Crate",    art:"🧨", cost:3, type:"spell", effect:{dmgPlayer:3}, text:"Deal 3 damage to the opponent."}
+  ],
+  elf: [
+    {name:"Sprout Seeker",       art:"🌱", cost:1, type:"creature", p:1, t:2, firstStrike:true, text:"First strike: deals damage before blockers strike back."},
+    {name:"Moonglade Druid",     art:"🌙", cost:2, type:"creature", p:1, t:3, ramp:1, ability:{cost:2, counter:true}, text:"Gives 1 extra Essence every turn. {2}, tap: +1/+1 counter on it."},
+    {name:"Thessaly, Grove Queen", art:"🌳", cost:5, type:"creature", p:3, t:5, vigilance:true, reach:true, hexproof:true, legendary:true, lord:{p:0,t:1}, text:"Legendary. Vigilance, reach, hexproof. Your other creatures get +0/+1."},
+    {name:"Thornwatch Sentinel", art:"🛡️", cost:3, type:"creature", p:2, t:5, defender:true, reach:true, indestructible:true, ability:{cost:2, dmgCreature:1}, text:"Defender. Reach. Indestructible. {2}, tap: 1 damage to a creature."},
+    {name:"Vine Warden",         art:"🌿", cost:4, type:"creature", p:3, t:5, vigilance:true, text:"Vigilance: attacks without tapping. Sturdy vines."},
+    {name:"Oakheart Elder",      art:"🌳", cost:6, type:"creature", p:5, t:6, onEnter:{heal:4}, text:"When it arrives: gain 4 life."},
+    {name:"Healing Dew",         art:"💧", cost:2, type:"spell", instant:true, effect:{heal:4}, text:"Instant. Gain 4 life."},
+    {name:"Thorn Snare",         art:"🥀", cost:2, type:"spell", instant:true, effect:{dmgCreature:3}, text:"Instant. Deal 3 damage to a creature."},
+    {name:"Pathfinder Song",     art:"🎶", cost:2, type:"spell", effect:{draw:1, heal:2}, text:"Draw a card and gain 2 life."}
+  ],
+  zombie: [
+    {name:"Shambler",      art:"🧟", cost:1, type:"creature", p:1, t:2, lifelink:true, text:"Lifelink: gains life equal to the damage it deals."},
+    {name:"Morrigar, Bone Queen", art:"💀", cost:5, type:"creature", p:3, t:4, lifelink:true, legendary:true, lord:{p:1,t:1}, text:"Legendary. Lifelink. Your other creatures get +1/+1."},
+    {name:"Grave Digger",  art:"⛏️", cost:2, type:"creature", p:2, t:2, onEnter:{draw:1}, text:"When it arrives: draw a card."},
+    {name:"Plague Bat",    art:"🦇", cost:2, type:"creature", p:2, t:1, haste:true, vigilance:true, flying:true, text:"Haste. Flying. Vigilance: attacks without tapping."},
+    {name:"Bog Walker",    art:"🌫️", cost:3, type:"creature", p:3, t:3, recover:true, text:"Recover: returns to hand once when it dies."},
+    {name:"Ghoul Captain", art:"💀", cost:4, type:"creature", p:4, t:4, haste:true, firstStrike:true, text:"Haste. First strike: deals damage before blockers strike back."},
+    {name:"Bone Colossus", art:"🦴", cost:5, type:"creature", p:5, t:5, recover:true, trample:true, text:"Trample. Recover: returns to hand once when it dies."},
+    {name:"Grave Chill",   art:"❄️", cost:2, type:"spell", instant:true, effect:{dmgCreature:2}, text:"Instant. Deal 2 damage to a creature."},
+    {name:"Drain Touch",   art:"🩸", cost:3, type:"spell", effect:{dmgPlayer:2, heal:2}, text:"Deal 2 damage to the opponent and gain 2 life."}
+  ],
+  knight: [
+    {name:"Squire",           art:"🛡️", cost:1, type:"creature", p:1, t:2, vigilance:true, text:"Vigilance: attacks without tapping, so it can still block."},
+    {name:"Chapel Priest",    art:"⛪", cost:2, type:"creature", p:1, t:3, onEnter:{heal:2}, text:"When it arrives: gain 2 life."},
+    {name:"Lancer",           art:"🏇", cost:3, type:"creature", p:3, t:2, firstStrike:true, text:"First strike: deals damage before blockers strike back."},
+    {name:"Royal Herald",     art:"📯", cost:3, type:"creature", p:2, t:2, onEnter:{draw:1}, text:"When it arrives: draw a card."},
+    {name:"Paladin",          art:"⚔️", cost:4, type:"creature", p:3, t:5, lifelink:true, text:"Lifelink: gains life equal to the damage it deals."},
+    {name:"Sky Cavalry",      art:"🐎", cost:4, type:"creature", p:3, t:3, flying:true, text:"Flying: only flying or reach creatures can block it."},
+    {name:"Charging Warhorse", art:"🐴", cost:5, type:"creature", p:5, t:4, haste:true, trample:true, text:"Haste. Trample: damage beyond the blocker goes to the player."},
+    {name:"Smite",            art:"✨", cost:2, type:"spell", instant:true, effect:{dmgCreature:3}, text:"Instant. Deal 3 damage to a creature."},
+    {name:"Aldric, Lord Marshal", art:"🛡️", cost:5, type:"creature", p:4, t:4, firstStrike:true, legendary:true, lord:{p:1,t:0}, text:"Legendary. First strike. Your other creatures get +1/+0."},
+  ],
+  dragon: [
+    {name:"Ember Whelp",  art:"🔥", cost:1, type:"creature", p:2, t:1, haste:true, text:"Haste: can attack the turn it arrives."},
+    {name:"Flame Drake",  art:"🐲", cost:2, type:"creature", p:2, t:2, flying:true, text:"Flying: only flying or reach creatures can block it."},
+    {name:"Brood Mother", art:"🥚", cost:3, type:"creature", p:2, t:3, onEnter:{dmgPlayer:2}, text:"When it arrives: deal 2 damage to the opponent."},
+    {name:"Vorax, Ancient Wyrm", art:"🐉", cost:5, type:"creature", p:4, t:5, flying:true, legendary:true, lord:{p:1,t:0}, text:"Legendary. Flying. Your other creatures get +1/+0."},
+    {name:"Cinder Wyrm",  art:"🌋", cost:4, type:"creature", p:4, t:4, haste:true, trample:true, text:"Haste. Trample: damage beyond the blocker goes to the player."},
+    {name:"Hoard Dragon", art:"💎", cost:5, type:"creature", p:5, t:5, onEnter:{draw:1}, text:"When it arrives: draw a card."},
+    {name:"Elder Dragon", art:"🐉", cost:6, type:"creature", p:6, t:6, flying:true, onEnter:{dmgPlayer:2}, text:"Flying. When it arrives: deal 2 damage to the opponent."},
+    {name:"Hot Coals",    art:"☄️", cost:2, type:"spell", instant:true, effect:{dmgCreature:2}, text:"Instant. Deal 2 damage to a creature."},
+    {name:"Dragonfire",   art:"🔥", cost:3, type:"spell", instant:true, effect:{dmgCreature:4}, text:"Instant. Deal 4 damage to a creature."}
+  ],
+  merfolk: [
+    {name:"Tide Runner",    art:"🐟", cost:1, type:"creature", p:1, t:2, firstStrike:true, text:"First strike: deals damage before blockers strike back."},
+    {name:"Lyra, Tidecaller", art:"🧜", cost:4, type:"creature", p:3, t:5, flying:true, legendary:true, lord:{p:0,t:1}, text:"Legendary. Flying. Your other creatures get +0/+1."},
+    {name:"Current Caller", art:"🌊", cost:2, type:"creature", p:2, t:2, flash:true, onEnter:{draw:1}, text:"Flash. When it arrives: draw a card."},
+    {name:"Riptide Eel",    art:"🐍", cost:3, type:"creature", p:3, t:2, menace:true, text:"Menace: needs two blockers."},
+    {name:"Kelp Serpent",   art:"🦑", cost:4, type:"creature", p:3, t:5, reach:true, ability:{cost:1, heal:1}, text:"Reach. {1}, tap: gain 1 life."},
+    {name:"Storm Whale",    art:"🐳", cost:5, type:"creature", p:4, t:6, trample:true, onEnter:{dmgPlayer:2}, text:"Trample. When it arrives: deal 2 damage to the opponent."},
+    {name:"Pearl Matriarch", art:"🔱", cost:6, type:"creature", p:5, t:6, flying:true, lifelink:true, text:"Flying. Lifelink: gains life equal to the damage it deals."},
+    {name:"Undertow",       art:"🌀", cost:2, type:"spell", instant:true, effect:{dmgCreature:2}, text:"Instant. Deal 2 damage to a creature."},
+    {name:"Tidal Surge",    art:"🌊", cost:3, type:"spell", effect:{dmgPlayer:3}, text:"Deal 3 damage to the opponent."}
+  ]
+};
+
+/* Shared cards: every deck runs one of each */
+const NEUTRAL = [
+  {name:"Mana Rock",     art:"🪨", cost:2, type:"artifact", text:"Artifact. Stays on the table and adds 1 Essence every turn."},
+  {name:"Battle Cry",   art:"📣", cost:2, type:"spell", instant:true, effect:{pumpTurn:{p:2}}, text:"Instant. Target creature you control gets +2/+0 this turn. Can be cast in combat."},
+  {name:"Bark Armour",   art:"🪵", cost:2, type:"spell", effect:{aura:{p:2,t:2}}, text:"Aura. Target creature you control gets +2/+2."},
+  {name:"Quell",         art:"🔇", cost:2, type:"spell", instant:true, effect:{counter:true}, text:"Instant. Counter target spell."},
+  {name:"Spiked Gauntlet", art:"🧤", cost:2, type:"equipment", equip:true, effect:{aura:{p:2,t:0}}, text:"Equipment. Attach to a creature you control: +2/+0. Equip {1}: move it to another creature."}
+];
+
+/* Line icons (inline SVG so they always render) */
+const ICON = {
+  attack:'<path d="M4 4l9 9M20 4l-9 9M9 13l-5 5M15 13l5 5"/>',
+  shield:'<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/>',
+  undo:'<path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3"/>',
+  end:'<path d="M5 5l9 7-9 7z"/><path d="M18 5v14"/>',
+  home:'<path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/>',
+  log:'<path d="M5 6h14M5 12h14M5 18h9"/>',
+  book:'<path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 00-3 3z"/>',
+  haste:'<path d="M4 12h12M12 6l6 6-6 6"/>',
+  star:'<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.4 9.3l6-.7z"/>',
+  card:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M10 9h4"/>',
+  target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+  bannerOn:'<rect x="3" y="7" width="18" height="10" rx="3"/><path d="M8 12h8"/>',
+  bannerOff:'<rect x="3" y="7" width="18" height="10" rx="3"/><path d="M8 12h8"/><path d="M3 3l18 18"/>',
+  soundOn:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 5.5a9 9 0 010 13"/>',
+  soundOff:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
+  vibOn:'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M3.5 8.5v7M20.5 8.5v7M1.5 10.5v3M22.5 10.5v3"/>',
+  vibOff:'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M3 3l18 18"/>',
+  themeSystem:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  moon:'<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>',
+  heart:'<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  shield:'<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/>',
+  land:'<path d="M3 19l6-9 4 5 3-3 5 7z"/>',
+  tap:'<path d="M20 12a8 8 0 11-2.3-5.7"/><path d="M20 4v5h-5"/>',
+  skull:'<circle cx="12" cy="10" r="6"/><path d="M9 20v-3h6v3M10 10h.01M14 10h.01"/>',
+  flag:'<path d="M6 21V4M6 4h11l-2 4 2 4H6"/>',
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  sword:'<path d="M12 3v12M8 15h8M12 15v6"/>',
+  wave:'<path d="M3 17c3-5 6 5 9 0s6-5 9-1"/>',
+  wing:'<path d="M2 16c5 0 8-3 10-8 2 5 5 8 10 8-4 1-7 0-10-2-3 2-6 3-10 2z"/>',
+  spear:'<path d="M3 21L17 7M17 7h4v4M13 11l-3 3"/>',
+  swords:'<path d="M5 3l12 12M19 3L7 15M5 15l3 3M19 15l-3 3"/>',
+  pack:'<circle cx="6" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="18" cy="12" r="2.5"/>',
+  indest:'<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  hexproof:'<circle cx="12" cy="12" r="8"/><path d="M5 5l14 14"/>',
+  flash:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/><path d="M3 21h4"/>',
+  equip:'<path d="M4 20l8-8M12 12l8-8M9 4l4 4M16 16l4 4"/>',
+  drop:'<path d="M12 3c3 4 6 7 6 11a6 6 0 01-12 0c0-4 3-7 6-11z"/>'
+};
+const ABIL_LABEL = {
+  haste:'Haste: attacks the turn it arrives', shield:'Defender: cannot attack', star:'When it arrives',
+  card:'Draws cards', target:'Deals damage to the opponent', heart:'Gains life',
+  sun:'Gives 1 extra Essence each turn', bolt:'Deals damage to a creature',
+  skull:'Deathtouch: any creature it damages in combat dies', flag:'Lord or rally: buffs your other creatures',
+  undo:'Recover: returns to hand once when it dies',
+  eye:'Vigilance: attacks without tapping, so it can still block',
+  sword:'First strike: deals its damage before blockers strike back',
+  wave:'Trample: damage beyond what the blocker can absorb goes to the player',
+  wing:'Flying: only creatures with flying or reach can block it',
+  spear:'Reach: can block creatures with flying',
+  swords:'Double strike: deals damage in the first-strike step and again in the regular step',
+  pack:'Menace: needs two or more blockers',
+  drop:'Lifelink: gains life equal to the damage it deals',
+  tap:'Ability: pay its cost and tap to use it',
+  indest:'Indestructible: does not die to lethal damage',
+  hexproof:'Hexproof: opponents cannot target it',
+  flash:'Flash: can be cast at instant speed'
+};
+function abilityIcons(c){
+  const out = [];
+  if(c.haste) out.push('haste');
+  if(c.defender) out.push('shield');
+  if(c.poison) out.push('skull');
+  if(c.recover) out.push('undo');
+  if(c.vigilance) out.push('eye');
+  if(c.firstStrike) out.push('sword');
+  if(c.trample) out.push('wave');
+  if(c.flying) out.push('wing');
+  if(c.reach) out.push('spear');
+  if(c.doubleStrike) out.push('swords');
+  if(c.menace) out.push('pack');
+  if(c.lifelink) out.push('drop');
+  if(c.onEnter){
+    out.push('star');
+    if(c.onEnter.draw) out.push('card');
+    if(c.onEnter.dmgPlayer) out.push('target');
+    if(c.onEnter.heal) out.push('heart');
+    if(c.onEnter.pump) out.push('flag');
+  }
+  if(c.ramp) out.push('sun');
+  if(c.lord) out.push('flag');
+  if(c.ability) out.push('tap');
+  if(c.indestructible) out.push('indest');
+  if(c.hexproof) out.push('hexproof');
+  if(c.flash) out.push('flash');
+  if(c.effect){
+    if(c.effect.dmgCreature) out.push('bolt');
+    if(c.effect.dmgPlayer) out.push('target');
+    if(c.effect.draw) out.push('card');
+    if(c.effect.heal) out.push('heart');
+  }
+  return out;
+}
+function abilHtml(c){
+  const icons = abilityIcons(c);
+  if(!icons.length) return '';
+  return `<div class="abil">${icons.map(n => `<span data-kw="${n}" title="${ABIL_LABEL[n]}">${ico(n, 14)}</span>`).join('')}</div>`;
+}
+function detailHtml(c){
+  const land = c.type === 'land';
+  const kind = land ? 'Land' : c.type === 'equipment' ? 'Equipment' : c.type === 'artifact' ? 'Artifact' : c.type === 'spell' ? ((c.effect && c.effect.aura) ? 'Aura' : 'Spell') : 'Creature';
+  const cost = land ? '' : ` · Cost ${c.cost}`;
+  const pt = c.type === 'creature' ? `<div class="ipt">⚔️ ${c.p} &nbsp; ♥ ${c.t}</div>` : '';
+  const rows = abilityIcons(c).map(n => `<div class="abrow">${ico(n, 18)}<span>${ABIL_LABEL[n]}</span></div>`).join('');
+  return `<div class="box detail"><div class="dbig ${c.faction}">${c.art}</div>` +
+    `<h2>${c.name}</h2><div class="dtype">${kind}${cost}</div>${pt}` +
+    `<p class="dtext">${c.text || 'Gives 1 Essence.'}</p>${rows ? `<div class="abrows">${rows}</div>` : ''}` +
+    `<button class="menu-btn gold" data-act="closedetail">Close</button></div>`;
+}
+
+function ico(name, size = 20, filled = false){
+  return `<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
+}
+
+/* Original goblin and elf artwork, drawn as SVG */
+const ART = {
+  "Scrap Runner":["face","goblin","sack"], "Tunnel Rat":["rat"], "Fuse Bomber":["face","goblin","bomb"],
+  "Smelter Brute":["face","goblin","flame"], "Warchief Krazg":["face","goblin","crown"], "Junk Golem":["golem"],
+  "Spark Flick":["spell","bolt"], "Greedy Haul":["spell","coins"], "Blast Crate":["spell","bomb"],
+  "Mana Rock":["spell","coins"], "Battle Cry":["spell","flame"], "Quell":["spell","moon"], "Spiked Gauntlet":["spell","lance"],
+  "Brakka, Warlord":["face","goblin","crown"], "Thessaly, Grove Queen":["face","elf","leaf"], "Morrigar, Bone Queen":["face","zombie","bone"],
+  "Aldric, Lord Marshal":["face","knight","shield"], "Vorax, Ancient Wyrm":["dragon"], "Lyra, Tidecaller":["face","merfolk","crown"],
+  "Tide Runner":["face","merfolk","moon"], "Shell Guard":["face","merfolk","shield"], "Current Caller":["face","merfolk","note"],
+  "Riptide Eel":["face","merfolk","lance"], "Kelp Serpent":["face","merfolk","vine"], "Storm Whale":["face","merfolk","drop"],
+  "Pearl Matriarch":["face","merfolk","crown"], "Undertow":["spell","drop"], "Tidal Surge":["spell","bomb"], "Bark Armour":["spell","leaf"],
+  "Sprout Seeker":["face","elf","leaf"], "Moonglade Druid":["face","elf","moon"], "Whisper Stag":["stag"],
+  "Thornwatch Sentinel":["face","elf","shield"], "Vine Warden":["face","elf","vine"], "Oakheart Elder":["ent"],
+  "Healing Dew":["spell","drop"], "Thorn Snare":["spell","vine"], "Pathfinder Song":["spell","note"],
+  "Mountain":["mountain"], "Forest":["forest"], "Plains":["plains"], "Island":["island"], "Swamp":["swamp"],
+  "Shambler":["face","zombie","sack"], "Crypt Rat":["rat"], "Grave Digger":["face","zombie","bone"],
+  "Plague Bat":["face","zombie","moon"], "Bog Walker":["face","zombie","vine"], "Ghoul Captain":["face","zombie","crown"],
+  "Bone Colossus":["golem"], "Grave Chill":["spell","bone"], "Drain Touch":["spell","drop"],
+  "Keep":["keep"], "Lair":["lair"],
+  "Squire":["face","knight","shield"], "Chapel Priest":["face","knight","moon"], "Lancer":["face","knight","lance"],
+  "Royal Herald":["face","knight","crown"], "Paladin":["face","knight","shield"], "Sky Cavalry":["horse"],
+  "Charging Warhorse":["horse"], "Smite":["spell","bolt"], "Page":["face","knight","shield"],
+  "Ember Whelp":["dragon"], "Flame Drake":["dragon"], "Brood Mother":["dragon"], "Young Drake":["dragon"],
+  "Cinder Wyrm":["dragon"], "Hoard Dragon":["dragon"], "Elder Dragon":["dragon"],
+  "Hot Coals":["spell","flame"], "Dragonfire":["spell","flame"]
+};
+const FACE = {
+  merfolk: `<path d="M50 16 Q74 20 72 50 L28 50 Q26 20 50 16Z" fill="#7fd6c9" stroke="#1f5f5a" stroke-width="2"/>` +
+           `<circle cx="42" cy="42" r="3" fill="#1b2d2b"/><circle cx="58" cy="42" r="3" fill="#1b2d2b"/>` +
+           `<path d="M30 62 Q50 84 70 62 Q50 70 30 62Z" fill="#2f8a9a"/>`,
+  knight: `<path d="M50 14 Q60 6 70 14 Q60 18 50 20" fill="#d64545"/>` +
+          `<path d="M50 20 Q74 26 72 52 L28 52 Q26 26 50 20Z" fill="#b9c0cb" stroke="#4c5563" stroke-width="2"/>` +
+          `<rect x="28" y="50" width="44" height="22" rx="4" fill="#8f98a6" stroke="#4c5563" stroke-width="2"/>` +
+          `<path d="M34 62 H66" stroke="#2a2f38" stroke-width="3"/>`,
+  zombie: `<path d="M26 40 Q50 22 74 40 L74 46 Q50 36 26 46Z" fill="#7d8f6a"/>` +
+          `<circle cx="50" cy="54" r="26" fill="#9bb07f"/>` +
+          `<path d="M36 46 l7 7 M43 46 l-7 7 M57 46 l7 7 M64 46 l-7 7" stroke="#2a3520" stroke-width="3" stroke-linecap="round"/>` +
+          `<path d="M38 68 L62 68" stroke="#2a3520" stroke-width="3" stroke-linecap="round"/>` +
+          `<path d="M44 68 v5 M50 68 v5 M56 68 v5" stroke="#eef3e0" stroke-width="2"/>`,
+  goblin: `<ellipse cx="14" cy="44" rx="13" ry="6" fill="#5f9a3c" transform="rotate(-25 14 44)"/>` +
+          `<ellipse cx="86" cy="44" rx="13" ry="6" fill="#5f9a3c" transform="rotate(25 86 44)"/>` +
+          `<circle cx="50" cy="52" r="28" fill="#7fc24e"/>` +
+          `<path d="M28 40 l16 5 M72 40 l-16 5" stroke="#23400f" stroke-width="4" stroke-linecap="round"/>` +
+          `<circle cx="39" cy="50" r="6" fill="#ffe14d"/><circle cx="61" cy="50" r="6" fill="#ffe14d"/>` +
+          `<circle cx="40" cy="51" r="3" fill="#111"/><circle cx="62" cy="51" r="3" fill="#111"/>` +
+          `<path d="M50 54 l-4 8 h8z" fill="#5b9a3a"/>` +
+          `<path d="M36 68 Q50 84 64 68 Z" fill="#3b1d12"/>` +
+          `<path d="M41 70 l3 5 l3-5 M53 70 l3 5 l3-5" stroke="#fff" stroke-width="1.5" fill="#fff"/>`,
+  elf: `<path d="M24 48 L4 36 L26 60 Z" fill="#f1d2b0"/><path d="M76 48 L96 36 L74 60 Z" fill="#f1d2b0"/>` +
+       `<circle cx="50" cy="52" r="25" fill="#f1d2b0"/>` +
+       `<path d="M24 44 Q50 6 76 44 Q66 28 50 30 Q34 28 24 44Z" fill="#d9b44a"/>` +
+       `<ellipse cx="41" cy="54" rx="3.5" ry="4.5" fill="#2b5d7a"/><ellipse cx="59" cy="54" rx="3.5" ry="4.5" fill="#2b5d7a"/>` +
+       `<path d="M43 68 Q50 74 57 68" stroke="#8a4b3a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
+};
+const PROP = {
+  bone:`<g transform="translate(70 70)"><rect x="-4" y="-12" width="8" height="24" rx="4" fill="#efe6cc" stroke="#7a6d52" stroke-width="2"/><circle cx="-6" cy="-12" r="4" fill="#efe6cc"/><circle cx="6" cy="-12" r="4" fill="#efe6cc"/></g>`,
+  sack:`<g transform="translate(70 68)"><path d="M-12 6 Q0 -8 12 6 Q16 20 0 22 Q-16 20 -12 6Z" fill="#8a6a3a" stroke="#4a3a1f" stroke-width="2"/><path d="M-5 -2 L0 -10 L5 -2" fill="#8a6a3a"/></g>`,
+  bomb:`<g transform="translate(72 72)"><circle r="10" fill="#222"/><path d="M5 -8 q5 -9 12 -5" stroke="#c8a040" stroke-width="2.5" fill="none"/><circle cx="17" cy="-13" r="3" fill="#ff7a22"/></g>`,
+  flame:`<path d="M72 92 q-14 -14 -2 -30 q2 9 7 9 q-5 -16 6 -26 q4 18 0 28 q7 -2 7 -9 q7 16 -18 28z" fill="#ff7a22"/><path d="M76 92 q-6 -9 0 -16 q3 6 6 4 q0 9 -6 12z" fill="#ffe14d"/>`,
+  crown:`<path d="M34 24 L38 12 L46 20 L50 8 L54 20 L62 12 L66 24 Z" fill="#f5c75a" stroke="#8a6a1a" stroke-width="1.5"/>`,
+  leaf:`<path d="M68 84 q16 -22 30 -6 q-12 20 -30 6z" fill="#3f9a4f"/><path d="M70 83 l22 -12" stroke="#23632f" stroke-width="2"/>`,
+  moon:`<path d="M78 14 a14 14 0 1 0 8 24 a11 11 0 1 1 -8 -24z" fill="#f5e7a0"/>`,
+  shield:`<path d="M70 62 h20 v14 c0 9 -10 13 -10 13 c0 0 -10 -4 -10 -13z" fill="#8a6a3a" stroke="#4a3a1f" stroke-width="2"/>`,
+  vine:`<path d="M12 90 q12 -22 24 -6 q12 14 24 -4 q8 -10 16 -2" stroke="#3f9a4f" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+  bolt:`<path d="M54 6 L26 56 H48 L40 96 L76 38 H54 L62 6Z" fill="#ffe14d" stroke="#8a6a1a" stroke-width="2"/>`,
+  coins:`<circle cx="40" cy="70" r="12" fill="#f5c75a" stroke="#8a6a1a" stroke-width="2"/><circle cx="62" cy="58" r="12" fill="#f5c75a" stroke="#8a6a1a" stroke-width="2"/><circle cx="60" cy="84" r="12" fill="#f5c75a" stroke="#8a6a1a" stroke-width="2"/>`,
+  drop:`<path d="M50 12 C38 32 30 44 30 62 a20 20 0 0 0 40 0 C70 44 62 32 50 12Z" fill="#4fb3ff" stroke="#1f5f8f" stroke-width="2"/>`,
+  note:`<path d="M40 74 V30 L68 22 V66" stroke="#f5e7a0" stroke-width="4" fill="none"/><circle cx="34" cy="76" r="8" fill="#f5e7a0"/><circle cx="62" cy="68" r="8" fill="#f5e7a0"/>`,
+  lance:`<g transform="translate(72 68) rotate(18)"><rect x="-2" y="-26" width="4" height="48" fill="#b9c2cc"/><path d="M-5 -26 L0 -36 L5 -26Z" fill="#e6ebf0"/></g>`
+};
+const BODY = {
+  mountain:`<path d="M0 100 L38 34 L56 62 L70 44 L100 100Z" fill="#6b4a3a"/><path d="M38 34 L46 48 L38 46 L32 50Z" fill="#f4f1ea"/><path d="M70 44 L78 56 L70 54 L64 58Z" fill="#f4f1ea"/>`,
+  forest:`<rect x="46" y="60" width="8" height="30" fill="#5a3b1f"/><circle cx="50" cy="44" r="24" fill="#2e6b35"/><circle cx="30" cy="62" r="14" fill="#3f8a45"/><circle cx="70" cy="62" r="14" fill="#3f8a45"/>`,
+  plains:`<circle cx="72" cy="28" r="12" fill="#f5d36a"/><path d="M0 100 Q50 60 100 100Z" fill="#c9a24a"/><path d="M20 100 L24 70 M40 100 L44 66 M60 100 L64 70 M80 100 L84 74" stroke="#8a6a25" stroke-width="2"/>`,
+  island:`<ellipse cx="50" cy="72" rx="36" ry="12" fill="#e9d59a"/><rect x="50" y="36" width="4" height="30" fill="#6b4a2a"/><path d="M52 36 Q66 26 74 34 Q62 32 52 40Z" fill="#2f7a3f"/><path d="M52 36 Q40 26 30 34 Q42 32 52 40Z" fill="#2f7a3f"/><path d="M0 88 q9 -6 18 0 t18 0 t18 0 t18 0 t18 0 t18 0" stroke="#dff6ff" stroke-width="2" fill="none"/>`,
+  swamp:`<ellipse cx="50" cy="66" rx="42" ry="16" fill="#3d4f2c"/><path d="M14 66 q9 -8 18 0 t18 0 t18 0 t18 0" stroke="#7fa35a" stroke-width="2" fill="none"/><path d="M60 46 l4 -10 l4 10" fill="#5e6e46"/><circle cx="34" cy="58" r="3" fill="#9fc27a"/>`,
+  rat:`<ellipse cx="50" cy="60" rx="28" ry="18" fill="#9c8f82"/><circle cx="30" cy="48" r="10" fill="#b8ab9d"/><circle cx="30" cy="48" r="5" fill="#f4a7b0"/><circle cx="36" cy="56" r="2.5" fill="#111"/><circle cx="22" cy="56" r="2.5" fill="#111"/><path d="M76 62 Q92 56 96 44" stroke="#c49a8a" stroke-width="3" fill="none"/>`,
+  stag:`<path d="M34 40 L24 14 M34 34 L20 30 M66 40 L76 14 M66 34 L80 30" stroke="#6b4a2a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="58" rx="22" ry="20" fill="#c59a63"/><ellipse cx="30" cy="48" rx="6" ry="4" fill="#c59a63" transform="rotate(-20 30 48)"/><ellipse cx="70" cy="48" rx="6" ry="4" fill="#c59a63" transform="rotate(20 70 48)"/><circle cx="43" cy="54" r="2.5" fill="#111"/><circle cx="57" cy="54" r="2.5" fill="#111"/><ellipse cx="50" cy="68" rx="4" ry="3" fill="#5a3d20"/>`,
+  golem:`<rect x="30" y="26" width="40" height="44" rx="6" fill="#8e9aa6"/><rect x="38" y="36" width="10" height="10" fill="#ffe14d"/><rect x="52" y="36" width="10" height="10" fill="#ffe14d"/><rect x="38" y="56" width="24" height="5" fill="#333"/><rect x="18" y="40" width="10" height="26" rx="3" fill="#6f7a86"/><rect x="72" y="40" width="10" height="26" rx="3" fill="#6f7a86"/><rect x="36" y="70" width="10" height="16" fill="#6f7a86"/><rect x="54" y="70" width="10" height="16" fill="#6f7a86"/>`,
+  ent:`<rect x="42" y="56" width="16" height="34" fill="#7a5530"/><circle cx="50" cy="40" r="30" fill="#3f8f4f"/><ellipse cx="40" cy="38" rx="4" ry="5" fill="#111"/><ellipse cx="60" cy="38" rx="4" ry="5" fill="#111"/><path d="M38 54 Q50 62 62 54" stroke="#1e4a25" stroke-width="3" fill="none"/>`,
+  warren:`<path d="M0 100 Q50 8 100 100Z" fill="#6b5238"/><path d="M34 100 Q50 58 66 100Z" fill="#1b1409"/><circle cx="26" cy="86" r="3" fill="#3b2e1c"/><circle cx="76" cy="80" r="2.5" fill="#3b2e1c"/>`,
+  grove:`<rect x="44" y="60" width="12" height="32" fill="#6b4a2a"/><circle cx="50" cy="42" r="28" fill="#2f7a3f"/><circle cx="38" cy="34" r="9" fill="#3f9a4f"/><circle cx="64" cy="50" r="7" fill="#3f9a4f"/>`,
+  keep:`<rect x="18" y="46" width="64" height="42" fill="#c8c0a4"/><rect x="18" y="38" width="10" height="8" fill="#c8c0a4"/><rect x="45" y="38" width="10" height="8" fill="#c8c0a4"/><rect x="72" y="38" width="10" height="8" fill="#c8c0a4"/><rect x="42" y="66" width="16" height="22" fill="#4a4030"/>`,
+  lair:`<path d="M0 100 Q50 0 100 100Z" fill="#5a3a2e"/><path d="M34 100 Q50 60 66 100Z" fill="#1d0f0a"/><circle cx="26" cy="86" r="3" fill="#8a3a22"/><circle cx="74" cy="80" r="3" fill="#ff7a22"/>`,
+  horse:`<ellipse cx="50" cy="60" rx="30" ry="16" fill="#8a5a33"/><path d="M68 52 L80 24 L88 30 L80 58Z" fill="#8a5a33"/><circle cx="84" cy="30" r="5" fill="#8a5a33"/><path d="M24 62 L20 88 M36 64 L34 88 M60 64 L62 88 M70 62 L74 88" stroke="#5a3a1f" stroke-width="4"/>`,
+  dragon:`<path d="M42 52 L6 16 L12 34 L2 44 L14 48 L8 64 L32 58 Z" fill="#5a1d12" stroke="#3a120a" stroke-width="1.5"/><path d="M58 52 L94 16 L88 34 L98 44 L86 48 L92 64 L68 58 Z" fill="#5a1d12" stroke="#3a120a" stroke-width="1.5"/><path d="M30 66 Q12 84 6 70 Q2 62 12 64" stroke="#a83a26" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M4 66 l-4 -4 l4 -1 l4 3z" fill="#7a2a18"/><path d="M38 72 L34 88 L40 88 L44 74Z M60 72 L64 88 L58 88 L54 74Z" fill="#8a2a1a"/><ellipse cx="50" cy="62" rx="22" ry="14" fill="#b8402a"/><path d="M34 50 l3 -8 l3 8 M42 48 l3 -8 l3 8 M50 48 l3 -8 l3 8" fill="#7a2a18"/><path d="M60 52 Q66 44 68 36 L76 34 Q74 46 66 58Z" fill="#b8402a"/><ellipse cx="72" cy="38" rx="12" ry="9" fill="#c9503a"/><path d="M80 37 L94 41 L80 44Z" fill="#c9503a"/><circle cx="92" cy="37" r="1.5" fill="#3a120a"/><path d="M62 31 L57 19 L66 29Z M70 29 L71 17 L75 28Z" fill="#e8d9a0"/><circle cx="68" cy="36" r="2.8" fill="#ffe14d"/><circle cx="68.8" cy="36.4" r="1.2" fill="#111"/>`
+};
+function artBody(name){
+  const k = ART[name] || [];
+  switch(k[0]){
+    case 'face': return `<g>${FACE[k[1]]}</g>${PROP[k[2]] || ''}`;
+    case 'spell': return `<circle cx="50" cy="50" r="40" fill="none" stroke="#f5c75a" stroke-width="2" stroke-dasharray="4 4"/>` +
+                         `<g transform="translate(14 14) scale(.72)">${PROP[k[1]]}</g>`;
+    case 'rat': return BODY.rat;
+    case 'stag': return BODY.stag;
+    case 'golem': return BODY.golem;
+    case 'ent': return BODY.ent;
+    case 'warren': return BODY.warren;
+    case 'grove': return BODY.grove;
+    case 'swamp': return BODY.swamp;
+    case 'mountain': return BODY.mountain;
+    case 'forest': return BODY.forest;
+    case 'plains': return BODY.plains;
+    case 'island': return BODY.island;
+    case 'keep': return BODY.keep;
+    case 'lair': return BODY.lair;
+    case 'horse': return BODY.horse;
+    case 'dragon': return BODY.dragon;
+  }
+  return '';
+}
+const PAL = { // Mountain (goblins, dragons), Forest, Swamp, Plains, Island (merfolk)
+  goblin:['#e8c0a8','#8a3b24'], dragon:['#f0c4b4','#7a2a1d'], elf:['#b9e6bf','#2f6b3a'],
+  zombie:['#cfd6bf','#4a5a33'], knight:['#f7efc9','#b59a3a'], merfolk:['#bfe6f0','#2a7d86']
+};
+function artSVG(c){
+  const land = c.type === 'land';
+  const pal = PAL[c.faction];
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">` +
+    `<rect width="100" height="100" fill="${pal[0]}"/><circle cx="50" cy="62" r="58" fill="${pal[1]}" opacity=".35"/>` +
+    artBody(c.name) + `</svg>`;
+}
+
+let G = null, uid = 1, preview = null;
+const GHOSTS = []; // creatures that just died, shown fading for a moment
+const EMB = {
+  goblin:'M12 2l2.5 4 4.5-1-1 4.5 4 2.5-4 2.5 1 4.5-4.5-1L12 22l-2.5-4-4.5 1 1-4.5-4-2.5 4-2.5-1-4.5 4.5 1z',
+  elf:'M4 20C4 10 10 4 20 4c0 10-6 16-16 16z',
+  zombie:'M15 3a9 9 0 1 0 6 14A8 8 0 0 1 15 3z',
+  knight:'M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z',
+  dragon:'M2 16c5 0 8-3 10-9 2 6 5 9 10 9-4 1-7 0-10-2-3 2-6 3-10 2z',
+  merfolk:'M2 14c2.5-3 5-3 7 0s4.5 3 7 0 4.5-3 6 0v3c-1.5-2.5-3-2.5-6 0s-4.5 2.5-7 0-4.5-2.5-7 0z'
+};
+function emblem(f){ return `<svg class="emb" viewBox="0 0 24 24" aria-hidden="true"><path d="${EMB[f]}"/></svg>`; }
+const FAC_ICON = {goblin:emblem('goblin'), elf:emblem('elf'), zombie:emblem('zombie'), knight:emblem('knight'), dragon:emblem('dragon'), merfolk:emblem('merfolk')};
+const COIN = '<svg class="i" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>';
+const FAC_NAME = {goblin:'Goblins', elf:'Elves', zombie:'Zombies', knight:'Knights', dragon:'Dragons', merfolk:'Merfolk'};
+let menu = {mode: null, picks: []};
+let settings = {banner: true, theme: 'system', sound: true, vib: true};
+/* Short vibration on phones that support it (Android; iPhone Safari ignores it) */
+function buzz(ms){ if(settings.vib && navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
+/* Small synthesised sounds (no files). Audio starts after the first tap, as browsers require. */
+let AC = null;
+function sfx(kind){
+  if(!settings.sound) return;
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if(AC.state === 'suspended') AC.resume();
+    const cfg = {tick:['sine',660,520,.08,.10], whoosh:['triangle',320,110,.18,.10],
+                 hit:['sine',420,260,.12,.05], heal:['sine',520,780,.18,.05],
+                 win:['triangle',523,784,.5,.18],
+                 spell:['triangle',440,880,.15,.12], chime:['sine',880,1320,.25,.12], death:['sine',330,180,.35,.05],
+                 turn:['sine',392,523,.2,.10], block:['square',220,330,.08,.10]}[kind];
+    if(!cfg) return;
+    const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.type = cfg[0];
+    o.frequency.setValueAtTime(cfg[1], t);
+    o.frequency.exponentialRampToValueAtTime(cfg[2], t + cfg[3]);
+    g.gain.setValueAtTime(Math.min(0.4, cfg[4] * 2.5), t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + cfg[3] + 0.1);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t + cfg[3] + 0.12);
+  }catch(e){}
+}
+function unlockAudio(){ try{ AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if(AC.state === 'suspended') AC.resume(); }catch(e){} }
+['pointerdown','touchend','click','keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, {capture: true}));
+const THEME_NEXT = {system: 'light', light: 'dark', dark: 'system'};
+const THEME_LABEL = {system: 'System', light: 'Light', dark: 'Dark'};
+function applyTheme(){
+  const wantsLight = settings.theme === 'light' ||
+    (settings.theme === 'system' && typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches);
+  if(typeof document === 'undefined' || !document.documentElement) return;
+  document.documentElement.dataset.theme = wantsLight ? 'light' : 'dark';
+}
+if(typeof matchMedia === 'function'){
+  const mq = matchMedia('(prefers-color-scheme: light)');
+  if(mq.addEventListener) mq.addEventListener('change', () => { if(settings.theme === 'system'){ applyTheme(); } });
+}
+let viewGrave = null, bannerTimer = null;
+let detailCard = null, pressTimer = null, pressed = false, autoTimer = null, dragSrc = null;
+let pointerDown = false, renderPending = false;
+const ALL = new Map();
+const $ = s => document.querySelector(s);
+/* Rewrite an area only when its HTML changed, so taps aren't swapped out mid-press and animations keep running */
+const shown = {};
+function put(sel, html){ if(shown[sel] === html) return; shown[sel] = html; const el = $(sel); if(el) el.innerHTML = html; }
+const H = sel => ({ set innerHTML(h){ put(sel, h); } });
+/* Drag-and-drop is for mouse users; on touch screens it delays taps */
+const CAN_DRAG = typeof window !== 'undefined' && !!(window.matchMedia && matchMedia('(pointer: fine)').matches);
+const cur = () => G.players[G.active];
+const opp = () => G.players[1 - G.active];
+const log = t => G.log.push(t);
+const avail = p => p.lands.length + p.field.reduce((s, c) => s + c.ramp, 0) - p.spent;
+const canAttack = c => !c.sick && !c.tapped && !c.defender;
+const busy = () => {
+  if(!G.vsAI || G.over) return false;
+  if(G.stack.length || G.damageWindow) return G.priority !== G.human;
+  if(G.mull) return false;
+  if(G.phase === 'main') return G.active !== G.human;
+  return G.active === G.human;
+};
+const viewer = () => {
+  if(G.vsAI) return G.human;
+  if(G.mull) return G.mull.order[G.mull.k];
+  if(G.stack.length || G.damageWindow) return G.priority;
+  return G.phase === 'block' ? 1 - G.active : G.active;
+};
+const LAND = {
+  goblin:{name:'Mountain', art:'⛰️', type:'land', text:'Gives 1 Essence.'},
+  elf:{name:'Forest', art:'🌲', type:'land', text:'Gives 1 Essence.'},
+  zombie:{name:'Swamp', art:'🌑', type:'land', text:'Gives 1 Essence.'},
+  knight:{name:'Plains', art:'🌾', type:'land', text:'Gives 1 Essence.'},
+  dragon:{name:'Mountain', art:'⛰️', type:'land', text:'Gives 1 Essence.'},
+  merfolk:{name:'Island', art:'🏝️', type:'land', text:'Gives 1 Essence.'}
+};
+const faceOf = p => FAC_ICON[p.faction];
+
+function schedule(fn, ms = 700){
+  setTimeout(() => { if(!G) return; fn(); render(); }, ms);
+}
+
+function shuffle(a){
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function mk(c, faction){
+  const card = {...c, faction, id: uid++, dmg: 0, sick: false, tapped: false,
+                haste: !!c.haste, defender: !!c.defender, ramp: c.ramp || 0, poison: !!c.poison,
+                recover: !!c.recover, recovered: false, basep: c.p, baset: c.t};
+  card.art = artSVG(card);
+  ALL.set(card.id, card);
+  return card;
+}
+
+function mkPlayer(faction){
+  const deck = [];
+  for(let i = 0; i < 22; i++){
+    deck.push(mk(LAND[faction], faction));
+  }
+  POOL[faction].forEach(c => { for(let k = 0; k < (c.legendary ? 1 : 4); k++) deck.push(mk(c, faction)); });
+  NEUTRAL.forEach(c => deck.push(mk(c, faction)));
+  return {
+    name: {goblin:'Goblins', elf:'Elves', zombie:'Zombies', knight:'Knights', dragon:'Dragons', merfolk:'Merfolk'}[faction], faction, life: 20,
+    library: shuffle(deck), hand: [], field: [], grave: [], lands: [],
+    landsPlayed: 0, spent: 0
+  };
+}
+
+function drawCard(p){
+  if(!p.library.length){
+    if(!G.over) G.over = {winner: 1 - G.players.indexOf(p), reason: `${p.name} ran out of cards to draw.`};
+    return;
+  }
+  p.hand.push(p.library.pop());
+  if(G.stats) G.stats.drawn[G.players.indexOf(p)]++;
+}
+
+function applyEffect(eff, p, o, src){
+  if(eff.buff) p.field.forEach(x => { x.p += eff.buff; });
+  if(eff.pump) p.field.forEach(x => { if(x !== src){ x.p += eff.pump; x.t += eff.pump; } });
+  if(eff.draw) for(let i = 0; i < eff.draw; i++) drawCard(p);
+  if(eff.heal){ p.life += eff.heal; fx(p, '+' + eff.heal); }
+  if(eff.dmgPlayer){ o.life -= eff.dmgPlayer; fx(o, '-' + eff.dmgPlayer); }
+}
+
+function checkWin(){
+  if(G.over) return;
+  G.players.forEach((p, i) => {
+    if(p.life <= 0 && !G.over) G.over = {winner: 1 - i, reason: `${p.name} reached 0 life.`};
+  });
+}
+
+/* Legendary lords buff every other creature their owner controls */
+function applyLords(){
+  G.players.forEach(p => {
+    p.field.forEach(c => {
+      let gp = 0, gt = 0;
+      p.field.forEach(l => { if(l !== c && l.lord){ gp += l.lord.p; gt += l.lord.t; } });
+      c.p += gp - (c.lordP || 0); c.t += gt - (c.lordT || 0);
+      c.lordP = gp; c.lordT = gt;
+    });
+  });
+}
+
+function cleanup(){
+  G.players.forEach(p => {
+    const dead = p.field.filter(c => c.dmg >= c.t && !c.indestructible);
+    p.field = p.field.filter(c => c.dmg < c.t || c.indestructible);
+    dead.forEach(c => {
+      if(c.attached && c.attached.length){ p.grave.push(...c.attached); c.attached = []; }
+      const g = {card: c, owner: G.players.indexOf(p)};
+      GHOSTS.push(g);
+      setTimeout(() => { const k = GHOSTS.indexOf(g); if(k >= 0) GHOSTS.splice(k, 1); if(G) render(); }, 650);
+      if(c.recover && !c.recovered){
+        c.recovered = true; c.dmg = 0; c.tapped = false; c.sick = false;
+        c.p = c.basep; c.t = c.baset; c.tmpP = 0; c.lordP = 0; c.lordT = 0; c.counters = 0;
+        p.hand.push(c); log(`${c.name} returns to hand.`);
+      } else {
+        p.grave.push(c); log(`${c.name} dies.`); sfx('death');
+      }
+    });
+  });
+  applyLords();
+  const alive = new Set(G.players.flatMap(p => p.field));
+  G.attackers = G.attackers.filter(c => alive.has(c));
+  G.blocks = G.blocks.filter(b => alive.has(b.attacker) && alive.has(b.blocker));
+  if(G.selBlocker && !alive.has(G.selBlocker)) G.selBlocker = null;
+  checkWin();
+}
+
+function beginTurn(skipDraw){
+  sfx('turn');
+  const p = cur();
+  p.landsPlayed = 0;
+  p.spent = 0;
+  p.field.forEach(c => { c.sick = false; c.tapped = false; });
+  G.attackers = []; G.blocks = []; G.selBlocker = null; G.phase = 'main';
+  G.combatDone = false;
+  if(!skipDraw) drawCard(p);
+  log(`Round ${G.turn}: ${p.name} begin their turn.`);
+}
+
+function startGame(vsAI, humanIdx, factions){
+  uid = 1;
+  ALL.clear();
+  preview = null;
+  G = {
+    players: [mkPlayer(factions[0]), mkPlayer(factions[1])], factions,
+    vsAI, human: humanIdx,
+    active: 0, turn: 1, phase: 'main',
+    attackers: [], blocks: [], selBlocker: null, targeting: null,
+    over: null, showPass: null, msg: '', log: [],
+    stack: [], priority: 0, endPending: false, mull: null,
+    discardNeed: 0, damageWindow: false, bannerKey: null, combatDone: false,
+    stats: {dealt: [0, 0], drawn: [0, 0]}
+  };
+  G.players.forEach(p => { for(let i = 0; i < 7; i++) drawCard(p); });
+  G.active = Math.random() < 0.5 ? 0 : 1;
+  G.priority = G.active;
+  G.mull = {stage: 'coin', order: [G.active, 1 - G.active], k: 0, mulls: [0, 0]};
+  log(`Coin flip: ${G.players[G.active].name} go first. Both decks have 60 cards.`);
+  render();
+}
+
+/* Mulligan: shuffle the hand back, draw 7, then put one random card per mulligan on the bottom */
+function mulligan(who){
+  const p = G.players[who], m = G.mull;
+  m.mulls[who]++;
+  p.library.push(...p.hand.splice(0));
+  p.library = shuffle(p.library);
+  for(let i = 0; i < 7; i++) drawCard(p);
+  for(let i = 0; i < m.mulls[who]; i++){
+    const j = Math.floor(Math.random() * p.hand.length);
+    p.library.unshift(p.hand.splice(j, 1)[0]);
+  }
+  log(`${p.name} mulligan to ${7 - m.mulls[who]}.`);
+}
+
+function mullStep(){
+  const m = G.mull;
+  if(!m || m.stage !== 'decide') return;
+  while(m.k < m.order.length){
+    const who = m.order[m.k];
+    if(G.vsAI && who !== G.human){
+      const lands = G.players[who].hand.filter(c => c.type === 'land').length;
+      if((lands < 2 || lands > 5) && m.mulls[who] < 2) mulligan(who); else m.k++;
+      continue;
+    }
+    return;
+  }
+  G.mull = null;
+  log('Both players keep their hands.');
+  beginTurn(true);
+  if(G.vsAI && G.active !== G.human) schedule(aiMain, 800);
+}
+
+function endTurn(){
+  if(G.over || G.phase !== 'main' || G.stack.length || G.discardNeed) return;
+  G.targeting = null;
+  G.players.forEach(p => p.field.forEach(c => { c.dmg = 0; if(c.tmpP){ c.p -= c.tmpP; c.tmpP = 0; } }));
+  if(G.vsAI && G.active === G.human){
+    aiInstantAtEnd();
+    if(G.over) return;
+    if(G.stack.length){ G.endPending = true; return; }
+  }
+  finishOrDiscard();
+}
+
+/* Hand size is seven: extra cards are discarded before the turn passes */
+function finishOrDiscard(){
+  if(G.over) return;
+  const p = cur(), extra = p.hand.length - 7;
+  if(extra <= 0) return finishEnd();
+  if(G.vsAI && G.active !== G.human){
+    for(let k = 0; k < extra; k++){
+      const ci = p.hand.reduce((bi, c, i) => (c.cost || 0) > (p.hand[bi].cost || 0) ? i : bi, 0);
+      log(`${p.name} discards ${p.hand[ci].name}.`);
+      p.grave.push(p.hand.splice(ci, 1)[0]);
+    }
+    return finishEnd();
+  }
+  G.discardNeed = extra;
+  G.msg = '';
+}
+
+function finishEnd(){
+  if(G.over) return;
+  G.active = 1 - G.active;
+  if(G.active === 0) G.turn++;
+  beginTurn(false);
+  if(G.vsAI){
+    if(G.active !== G.human) schedule(aiMain, 800);
+  } else {
+    G.showPass = `${cur().name}: your turn next.`;
+  }
+}
+
+function playCard(i){
+  if(G.over || G.targeting || G.stack.length || G.phase !== 'main') return;
+  const p = cur(), c = p.hand[i];
+  if(!c) return;
+
+  if(c.type === 'land'){
+    if(p.landsPlayed >= 1){ G.msg = 'Only one land per turn.'; return; }
+    p.hand.splice(i, 1); p.lands.push(c); p.landsPlayed++; sfx('tick');
+    log(`${p.name} played a ${c.name}.`);
+    return;
+  }
+  if(c.cost > avail(p)){ G.msg = `Needs ${c.cost} Essence.`; return; }
+
+  if(c.type === 'artifact'){
+    p.hand.splice(i, 1); p.spent += c.cost; p.lands.push(c);
+    log(`${p.name} played ${c.name}.`); sfx('tick');
+    return;
+  }
+
+  if(c.type === 'creature'){
+    p.hand.splice(i, 1); p.spent += c.cost;
+    c.sick = !c.haste;
+    p.field.push(c);
+    applyLords();
+    log(`${p.name} cast ${c.name}.`);
+    if(c.onEnter) applyEffect(c.onEnter, p, opp(), c);
+    checkWin();
+    return;
+  }
+
+  if(c.effect.aura){
+    if(!p.field.length){ G.msg = 'You need a creature to enchant first.'; return; }
+    G.targeting = {card: c, caster: G.active};
+    G.msg = '';
+    return;
+  }
+
+  if(c.effect.dmgCreature){
+    if(!G.players.some(p => p.field.length)){ G.msg = 'No creatures on the table to target yet.'; return; }
+    G.targeting = {card: c, caster: G.active};
+    G.msg = '';
+    return;
+  }
+  p.hand.splice(i, 1); p.spent += c.cost; p.grave.push(c);
+  log(`${p.name} cast ${c.name}.`);
+  applyEffect(c.effect, p, opp());
+  checkWin();
+}
+
+function resolveTarget(target){
+  if(G.targeting.abilityOf){
+    const src = G.targeting.abilityOf, P = G.players[G.targeting.caster];
+    if(!P.field.includes(src) && !G.players.some(q => q.field.includes(target))){ G.targeting = null; return; }
+    if(!G.players.some(q => q.field.includes(target))){ G.msg = 'Pick a creature.'; return; }
+    if(target.hexproof && !P.field.includes(target)){ G.msg = 'Hexproof: that creature cannot be targeted.'; return; }
+    G.targeting = null;
+    target.dmg += src.ability.dmgCreature;
+    fx(target, '-' + src.ability.dmgCreature);
+    log(`${src.name} dealt ${src.ability.dmgCreature} to ${target.name}.`);
+    cleanup();
+    return;
+  }
+  if(G.targeting.equip){
+    const eq = G.targeting.equip, P = G.players[G.targeting.caster];
+    if(!P.field.includes(target)){ G.msg = 'Pick one of your own creatures.'; return; }
+    if(avail(P) < 1){ G.msg = 'Needs 1 Essence.'; G.targeting = null; return; }
+    G.targeting = null;
+    const host = P.field.find(c => (c.attached || []).includes(eq));
+    if(host){ host.attached = host.attached.filter(a => a !== eq); host.p -= eq.effect.aura.p; host.t -= eq.effect.aura.t; }
+    target.attached = [...(target.attached || []), eq];
+    target.p += eq.effect.aura.p; target.t += eq.effect.aura.t;
+    P.spent += 1;
+    log(`${P.name} equipped ${eq.name} to ${target.name}.`);
+    cleanup();
+    return;
+  }
+  const card = G.targeting.card;
+  const p = G.players[G.targeting.caster];
+  if(card.effect && (card.effect.aura || card.effect.pumpTurn) && !p.field.includes(target)){ G.msg = 'Pick one of your own creatures.'; return; }
+  if(target.hexproof && !p.field.includes(target)){ G.msg = 'Hexproof: that creature cannot be targeted.'; return; }
+  G.targeting = null;
+  const i = p.hand.indexOf(card);
+  if(i < 0) return;
+  p.hand.splice(i, 1); p.spent += card.cost;
+  if(card.instant){
+    log(`⚡ ${p.name} cast ${card.name} at ${target.name}.`);
+    pushStack(card, G.players.indexOf(p), target);
+    return;
+  }
+  if(card.effect.aura){
+    target.attached = [...(target.attached || []), card];
+    target.p += card.effect.aura.p; target.t += card.effect.aura.t;
+    target._fx = `+${card.effect.aura.p}/+${card.effect.aura.t}`;
+    setTimeout(() => { delete target._fx; if(G) render(); }, 1100);
+    log(`${card.name} gave ${target.name} +${card.effect.aura.p}/+${card.effect.aura.t}.`);
+    cleanup();
+    return;
+  }
+  p.grave.push(card);
+  target.dmg += card.effect.dmgCreature;
+  fx(target, '-' + card.effect.dmgCreature);
+  log(`${card.name} dealt ${card.effect.dmgCreature} to ${target.name}.`);
+  cleanup();
+}
+
+function creatureClick(c, owner){
+  if(G.over) return;
+  if(G.targeting){ resolveTarget(c); return; }
+
+  if(G.phase === 'main'){
+    if(owner !== G.active) return;
+    if(G.combatDone){ G.msg = 'Combat is over for this turn.'; return; }
+    if(G.attackers.includes(c)){ G.attackers = G.attackers.filter(x => x !== c); return; }
+    if(!canAttack(c)){ G.msg = c.defender ? `${c.name} can't attack.` : `${c.name} is summoning sick.`; return; }
+    G.attackers.push(c);
+    return;
+  }
+
+  if(G.phase === 'block'){
+    const def = 1 - G.active;
+    if(owner === def){
+      const b = G.blocks.find(x => x.blocker === c);
+      if(b){ G.blocks = G.blocks.filter(x => x !== b); return; }
+      if(c.tapped){ G.msg = `${c.name} is tapped.`; return; }
+      G.selBlocker = G.selBlocker === c ? null : c;
+      return;
+    }
+    if(owner === G.active && G.attackers.includes(c)){
+      if(!G.selBlocker){
+        if(G.blocks.some(x => x.attacker === c)){ G.blocks = G.blocks.filter(x => x.attacker !== c); return; }
+        G.msg = 'Pick your blocker first.'; return;
+      }
+      if(!canBlockAttacker(G.selBlocker, c)){ G.msg = `Only flying or reach can block ${c.name}.`; return; }
+      G.blocks.push({attacker: c, blocker: G.selBlocker}); sfx('block');
+      G.selBlocker = null;
+      if(c.menace && G.blocks.filter(x => x.attacker === c).length === 1) G.msg = `${c.name} has menace: it needs a second blocker.`;
+    }
+  }
+}
+
+function attackAllCreatures(){
+  if(G.over || G.phase !== 'main' || G.targeting || G.combatDone || G.stack.length || G.discardNeed) return;
+  const ready = cur().field.filter(c => canAttack(c) && !G.attackers.includes(c));
+  if(!ready.length){ G.msg = 'No creatures can attack.'; return; }
+  G.attackers.push(...ready);
+  declareAttack();
+}
+
+function declareAttack(){
+  if(G.over || G.phase !== 'main' || G.targeting || G.combatDone || !G.attackers.length) return;
+  sfx('whoosh'); buzz(12);
+  G.attackers.forEach(c => { if(!c.vigilance) c.tapped = true; });
+  const lungers = [...G.attackers], dir = G.active === viewer() ? 'up' : 'down';
+  lungers.forEach(c => { c._lunge = dir; });
+  setTimeout(() => { lungers.forEach(c => { c._lunge = null; }); if(G) render(); }, 650);
+  const def = opp();
+  log(`${cur().name} attack with ${G.attackers.length} creature(s).`);
+  G.phase = 'block';
+  G.selBlocker = null;
+  G.blocks = [];
+
+  if(!def.field.some(c => !c.tapped)){ openDamageWindow(); return; }
+
+  const aiDefends = G.vsAI && G.active === G.human;
+  if(aiDefends){
+    schedule(() => { aiBlock(); openDamageWindow(); }, 900);
+    return;
+  }
+  if(!G.vsAI) G.showPass = `${def.name}: pick your blockers.`;
+}
+
+/* Flying can only be blocked by flying or reach */
+function canBlockAttacker(blk, att){
+  return !att.flying || !!(blk.flying || blk.reach);
+}
+
+/* Who takes how much damage in one block. Step 1: first strike and double strike.
+   Step 2: regular damage from creatures still alive. Deathtouch (poison) kills on any damage. */
+function fightOutcome(a, b){
+  const aLeft = a.t - a.dmg, bLeft = b.t - b.dmg;
+  let aIn = 0, bIn = 0;
+  if(a.p > 0 && (a.firstStrike || a.doubleStrike)){ bIn += a.p; if(a.poison) bIn = Math.max(bIn, bLeft); }
+  if(b.p > 0 && (b.firstStrike || b.doubleStrike)){ aIn += b.p; if(b.poison) aIn = Math.max(aIn, aLeft); }
+  const aAlive = aIn < aLeft, bAlive = bIn < bLeft;
+  if(a.p > 0 && (!a.firstStrike || a.doubleStrike) && aAlive){ bIn += a.p; if(a.poison) bIn = Math.max(bIn, bLeft); }
+  if(b.p > 0 && (!b.firstStrike || b.doubleStrike) && bAlive){ aIn += b.p; if(b.poison) aIn = Math.max(aIn, aLeft); }
+  return {aIn, bIn};
+}
+
+/* A gold spark flies from an attacker to its blocker, or to a player's life tile */
+function flySpark(from, to, delay){
+  const center = el => { const r = el.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2}; };
+  const a = document.querySelector(`[data-id="${from.id}"]`);
+  let b;
+  if(to.field) b = document.querySelector(G.players.indexOf(to) === viewer() ? '#myTag' : '#oppTag');
+  else b = document.querySelector(`[data-id="${to.id}"]`);
+  if(!a || !b) return;
+  const p0 = center(a), p1 = center(b);
+  const dot = document.createElement('div');
+  dot.className = 'spark';
+  document.body.appendChild(dot);
+  const anim = dot.animate([
+    {transform: `translate(${p0.x - 5}px, ${p0.y - 5}px)`, opacity: 1},
+    {transform: `translate(${p1.x - 5}px, ${p1.y - 5}px)`, opacity: 0.2}
+  ], {duration: 320, delay, easing: 'ease-in', fill: 'backwards'});
+  anim.onfinish = () => dot.remove();
+}
+
+function resolveCombat(){
+  if(G.over || G.phase !== 'block' || G.stack.length) return;
+  G.damageWindow = false;
+  const me = cur(), def = opp();
+  // Sparks start from the current table positions, before the damage re-renders the cards
+  const sparkPairs = [];
+  G.attackers.forEach(a => {
+    if(!me.field.includes(a)) return;
+    const bl = G.blocks.find(x => x.attacker === a);
+    sparkPairs.push([a, bl ? bl.blocker : def]);
+  });
+  sparkPairs.forEach((pr, i) => flySpark(pr[0], pr[1], i * 150));
+  G.attackers.forEach(a => {
+    if(!me.field.includes(a)) return;
+    let use = G.blocks.filter(x => x.attacker === a).map(x => x.blocker);
+    if(a.menace && use.length === 1){ log(`${a.name} has menace and needed two blockers.`); use = []; }
+    if(!use.length){
+      def.life -= a.p;
+      log(`${a.name} hit for ${a.p}.`);
+      if(a.p) fx(def, '-' + a.p);
+      if(a.lifelink && a.p){ me.life += a.p; fx(me, '+' + a.p); }
+      return;
+    }
+    use.forEach((bl, i) => {
+      const bLeft = bl.t - bl.dmg;
+      // The attacker's damage goes to its first blocker; extra blockers only strike back
+      const src = i === 0 ? a : {...a, p: 0, firstStrike: false, doubleStrike: false, poison: false};
+      const r = fightOutcome(src, bl);
+      bl.dmg += r.bIn; a.dmg += r.aIn;
+      if(i === 0 && a.trample && a.p > bLeft){ const x = a.p - Math.max(0, bLeft); def.life -= x; fx(def, '-' + x); }
+      if(i === 0 && a.lifelink && r.bIn){ me.life += r.bIn; fx(me, '+' + r.bIn); }
+      if(bl.lifelink && r.aIn){ def.life += r.aIn; fx(def, '+' + r.aIn); }
+      log(`${bl.name} blocked ${a.name}.`);
+      if(r.bIn) fx(bl, '-' + r.bIn);
+      if(r.aIn) fx(a, '-' + r.aIn);
+    });
+  });
+  G.attackers = []; G.blocks = []; G.selBlocker = null; G.phase = 'main';
+  G.combatDone = true;
+  cleanup();
+  if(G.vsAI && G.active !== G.human && !G.over) schedule(aiEnd, 800);
+}
+
+/* Combat tricks: after blocks, the attacker may act before damage. Skipped when nobody has an instant. */
+function openDamageWindow(){
+  if(G.over || G.phase !== 'block') return;
+  const anyInstant = G.players.some(q => q.hand.some(c => c.instant && c.cost <= avail(q)));
+  if(!anyInstant){ resolveCombat(); return; }
+  G.damageWindow = true;
+  G.priority = G.active;
+  G.msg = '';
+  if(G.vsAI && G.active !== G.human) schedule(aiDamagePass, 700);
+}
+
+/* Safety net, checked once a second: if the computer holds priority on the stack or in a damage window and
+   nothing has happened for about two seconds, let it act again so the game can't freeze. */
+setInterval(() => {
+  if(G && G.over){ if(!G._saveCleared){ G._saveCleared = true; try{ localStorage.removeItem(SAVE_KEY); }catch(e){} } }
+  else if(G) saveGame();
+  if(!G || G.over || !G.vsAI) { if(G) G._stuck = 0; return; }
+  const waiting = (G.stack.length || G.damageWindow) && G.priority !== G.human;
+  if(waiting){
+    G._stuck = (G._stuck || 0) + 1;
+    if(G._stuck < 2) return;
+    G._stuck = 0;
+    if(G.stack.length) aiPriority(); else aiDamagePass();
+    render();
+    return;
+  }
+  // The computer's main phase has not moved for about three seconds: carry on with its attack / end step
+  const sig = [G.turn, G.active, G.phase, G.stack.length, G.targeting ? 1 : 0, G.players.map(p => p.life + ':' + p.field.length + ':' + p.hand.length).join('|')].join('/');
+  if(G.active !== G.human && G.phase === 'main' && !G.stack.length && !G.targeting){
+    if(G._aiSig === sig) G._aiSame = (G._aiSame || 0) + 1; else { G._aiSame = 0; G._aiSig = sig; }
+    if(G._aiSame >= 3){ G._aiSame = 0; aiAttack(); render(); }
+  } else { G._aiSame = 0; }
+  G._stuck = 0;
+}, 1000);
+
+function aiDamagePass(){
+  if(G.over || !G.damageWindow || G.stack.length || G.priority === G.human) return;
+  if(G.active !== G.human && aiTrick()) return;
+  resolveCombat();
+}
+
+/* Floating numbers: a short "-3" over whatever took the change */
+function fx(target, text){
+  // soft tones: a low pluck for damage, a bright rise for life gained
+  sfx(text[0] === '+' ? 'heal' : 'hit');
+  target._good = text[0] === '+';
+  if(target.life !== undefined && text[0] === '-' && G.stats) G.stats.dealt[1 - G.players.indexOf(target)] += parseInt(text.slice(1)) || 0;
+  if(text[0] === '-') buzz(30);
+  target._fx = text;
+  target._hit = true; // the card shakes once when it takes damage
+  setTimeout(() => { delete target._fx; delete target._hit; delete target._good; if(G) render(); }, 1100);
+}
+
+/* Turn banner: shows when the turn changes */
+/* Turn banner: heading plus the hint in one card. The small hint pill is hidden while the card is up, so they never overlap. */
+function showBanner(text, sub){
+  const b = $('#banner'), h = $('#hint');
+  if(!b || !settings.banner) return;
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  b.innerHTML = `<div class="bt">${esc(text)}</div>` + (sub ? `<div class="bs">${esc(sub)}</div>` : '');
+  b.classList.toggle('show', true);
+  if(h) h.style.visibility = 'hidden';
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => { b.classList.toggle('show', false); if(h) h.style.visibility = ''; }, 1600);
+}
+
+/* Lines on the table: a spell being chosen points at each legal target, a spell on the stack points at its target,
+   and a blocker points at the attacker it blocks */
+function drawArrows(){
+  const svg = $('#arrows');
+  if(!svg) return;
+  svg.innerHTML = '';
+  if(!G || !document.querySelectorAll) return;
+  const rect = el => (el && el.getBoundingClientRect) ? el.getBoundingClientRect() : null;
+  const at = r => ({x: r.left + r.width / 2, y: r.top + r.height / 2});
+  const seg = (a, b, color, dashed) =>
+    `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${color}" stroke-width="3"${dashed ? ' stroke-dasharray="8 6"' : ''}/>` +
+    `<circle cx="${b.x}" cy="${b.y}" r="6" fill="${color}"/>`;
+  const q = sel => rect(document.querySelector(sel));
+  let out = '';
+  if(G.targeting){
+    const hand = G.players[G.targeting.caster].hand;
+    const src = q(`#myHand [data-i="${hand.indexOf(G.targeting.card)}"]`);
+    if(src){
+      const a = {x: src.left + src.width / 2, y: src.top};
+      document.querySelectorAll('[data-act=creature]').forEach(el => { const r = rect(el); if(r) out += seg(a, at(r), '#f5c75a', true); });
+    }
+  }
+  G.stack.forEach(e => {
+    if(!e.target) return;
+    const s1 = q(`#preview [data-card="${e.card.id}"]`), t = q(`[data-id="${e.target.id}"]`);
+    if(s1 && t) out += seg(at(s1), at(t), '#ff8a7a', false);
+  });
+  G.blocks.forEach(b => {
+    const d = q(`[data-id="${b.blocker.id}"]`), a = q(`[data-id="${b.attacker.id}"]`);
+    if(d && a) out += seg(at(d), at(a), '#6fb8ff', false);
+  });
+  svg.innerHTML = out;
+}
+
+/* ---------- The stack: instants wait here, and the other player may answer before they resolve ---------- */
+
+function pushStack(card, owner, target){
+  sfx('spell');
+  G.stack.push({card, owner, target});
+  G.priority = 1 - owner;
+  if(G.vsAI && G.priority !== G.human) schedule(aiPriority, 600);
+}
+
+function resolveTop(){
+  sfx('chime');
+  const e = G.stack.pop();
+  if(!e) return;
+  const p = G.players[e.owner], o = G.players[1 - e.owner];
+  p.grave.push(e.card);
+  const eff = e.card.effect;
+  if(eff.counter){
+    const tgt = G.stack.pop();
+    if(tgt){ G.players[tgt.owner].grave.push(tgt.card); log(`${e.card.name} countered ${tgt.card.name}.`); }
+    else log(`${e.card.name} had nothing to counter.`);
+  } else if(eff.dmgCreature){
+    if(e.target && G.players.some(q => q.field.includes(e.target))){
+      e.target.dmg += eff.dmgCreature;
+      fx(e.target, '-' + eff.dmgCreature);
+      log(`${e.card.name} dealt ${eff.dmgCreature} to ${e.target.name}.`);
+    } else {
+      log(`${e.card.name} fizzled.`);
+    }
+  } else if(eff.pumpTurn){
+    const t = e.target;
+    if(t && G.players.some(q => q.field.includes(t))){
+      t.p += eff.pumpTurn.p; t.tmpP = (t.tmpP || 0) + eff.pumpTurn.p;
+      log(`${e.card.name} gave ${t.name} +${eff.pumpTurn.p}/+0 this turn.`);
+    } else {
+      log(`${e.card.name} fizzled.`);
+    }
+  } else {
+    applyEffect(eff, p, o);
+  }
+  cleanup();
+  checkWin();
+  G.priority = G.active;
+  if(G.over) return;
+  if(!G.stack.length && G.endPending){ G.endPending = false; finishOrDiscard(); return; }
+  if(G.damageWindow && !G.stack.length && G.vsAI && G.active !== G.human) schedule(aiDamagePass, 600);
+  if(G.vsAI && G.stack.length && G.priority !== G.human) schedule(aiPriority, 600);
+}
+
+function stackHtml(){
+  return `<div class="stackrow"><span>Stack</span>${G.stack.slice().reverse().map(e => cardEl(e.card, {mini: true})).join('')}</div>`;
+}
+
+/* The computer answers with an instant if it can, otherwise lets the spell resolve */
+function aiPriority(){
+  if(G.over || !G.stack.length || G.priority === G.human) return;
+  const ai = G.players[1 - G.human], hu = G.players[G.human];
+  const i = ai.hand.findIndex(c => c.instant && c.cost <= avail(ai) && !c.effect.pumpTurn && !(c.effect.counter && (!G.stack.length || G.stack[G.stack.length - 1].owner !== G.human)) && (!c.effect.dmgCreature || hu.field.length));
+  if(i < 0){ resolveTop(); return; }
+  aiCast(i);
+}
+
+function aiCast(i){
+  const me = 1 - G.human, ai = G.players[me], hu = G.players[G.human];
+  const c = ai.hand[i];
+  ai.hand.splice(i, 1); ai.spent += c.cost;
+  if(c.effect.dmgCreature){
+    const sorted = [...hu.field].sort((a, b) => b.p - a.p);
+    const t = sorted.find(x => x.t - x.dmg <= c.effect.dmgCreature) || sorted[0];
+    log(`⚡ ${ai.name} cast ${c.name} at ${t.name}.`);
+    pushStack(c, me, t);
+  } else {
+    log(`⚡ ${ai.name} cast ${c.name}.`);
+    pushStack(c, me, null);
+  }
+}
+
+/* ---------- Computer opponent ---------- */
+
+function aiTarget(dmg){
+  const enemies = [...opp().field].filter(c => !c.hexproof);
+  if(!enemies.length) return null;
+  const kill = enemies.filter(c => c.t - c.dmg <= dmg).sort((a, b) => b.p - a.p)[0];
+  return kill || enemies.sort((a, b) => b.p - a.p)[0];
+}
+
+function aiMain(){
+  if(G.over || G.phase !== 'main' || G.active === G.human) return;
+  if(G.stack.length){ schedule(aiMain, 700); return; }
+  if(G.targeting){ schedule(aiMain, 700); return; }
+  const p = cur();
+  const li = p.hand.findIndex(c => c.type === 'land');
+  if(li >= 0 && p.landsPlayed < 1){ playCard(li); schedule(aiMain, 700); return; }
+
+  let best = null;
+  p.hand.forEach((c, i) => {
+    if(c.type === 'land' || c.instant || c.cost > avail(p)) return;
+    if(c.effect && c.effect.dmgCreature && !aiTarget(c.effect.dmgCreature)) return;
+    if(c.effect && c.effect.aura && !p.field.length) return;
+    if(!best || c.cost > best.c.cost) best = {c, i};
+  });
+  if(best){
+    if(best.c.effect && best.c.effect.dmgCreature){
+      G.targeting = {card: best.c, caster: G.active};
+      resolveTarget(aiTarget(best.c.effect.dmgCreature));
+    } else if(best.c.effect && best.c.effect.aura){
+      G.targeting = {card: best.c, caster: G.active};
+      resolveTarget([...p.field].sort((a, b) => b.p - a.p)[0]);
+    } else {
+      playCard(best.i);
+    }
+    schedule(aiMain, 700);
+    return;
+  }
+  schedule(aiAttack, 700);
+}
+
+function aiAttack(){
+  if(G.over || G.phase !== 'main' || G.active === G.human) return;
+  if(G.stack.length){ schedule(aiAttack, 700); return; }
+  const p = cur(), o = opp();
+  const blockers = o.field.filter(c => !c.tapped);
+  const total = p.field.filter(canAttack).reduce((s, c) => s + c.p, 0);
+  // Only blockers that can legally block this creature count (flying, reach, menace)
+  const safe = c => {
+    const bl = blockers.filter(b => canBlockAttacker(b, c));
+    if(c.menace) return bl.length < 2 || total >= o.life;
+    if(!bl.length || total >= o.life) return true;
+    if((c.firstStrike || c.doubleStrike) && bl.every(b => b.p < c.t)) return true;
+    return c.t > Math.max(...bl.map(b => b.p));
+  };
+  const atk = p.field.filter(c => canAttack(c) && safe(c));
+  if(G.combatDone || !atk.length){ schedule(aiEnd, 600); return; }
+  G.attackers = atk;
+  declareAttack();
+}
+
+function aiBlock(){
+  const ai = opp();
+  const incoming = G.attackers.reduce((s, a) => s + a.p, 0);
+  const danger = incoming >= ai.life;
+  const sorted = [...G.attackers].sort((a, b) => b.p - a.p);
+  for(const a of sorted){
+    if(a.menace) continue; // the AI does not double-block
+    const free = ai.field.filter(b => !b.tapped && !G.blocks.some(x => x.blocker === b) && canBlockAttacker(b, a));
+    if(!free.length) continue;
+    const pick = free.find(b => b.t > a.p && b.p >= a.t)
+              || free.find(b => b.p >= a.t)
+              || (danger ? [...free].sort((x, y) => x.p - y.p)[0] : null);
+    if(pick) G.blocks.push({attacker: a, blocker: pick});
+  }
+}
+
+function aiEnd(){
+  if(G.over || G.active === G.human) return;
+  if(G.stack.length){ schedule(aiEnd, 700); return; }
+  endTurn();
+}
+
+/* ---------- Rendering ---------- */
+
+function usableAbilities(){
+  const p = cur();
+  return p.field.filter(c => c.ability && !c.tapped && !c.sick && c.ability.cost <= avail(p));
+}
+function equipHost(){ return cur().field.find(c => (c.attached || []).some(a => a.equip)); }
+function useAbility(){
+  if(G.over || G.phase !== 'main' || G.targeting || G.stack.length) return;
+  const src = usableAbilities()[0];
+  if(!src){ G.msg = 'No ability can be used right now.'; return; }
+  const a = src.ability, p = cur();
+  p.spent += a.cost; src.tapped = true; sfx('tick');
+  if(a.heal){ p.life += a.heal; fx(p, '+' + a.heal); log(`${src.name} gained ${a.heal} life.`); }
+  else if(a.counter){ src.p += 1; src.t += 1; src.counters = (src.counters || 0) + 1; log(`${src.name} gets a +1/+1 counter.`); }
+  else if(a.dmgCreature){ G.targeting = {abilityOf: src, caster: G.active}; G.msg = ''; }
+}
+function useEquip(){
+  if(G.over || G.phase !== 'main' || G.targeting || G.stack.length) return;
+  const host = equipHost();
+  if(!host){ G.msg = 'No equipment to move.'; return; }
+  if(avail(cur()) < 1){ G.msg = 'Needs 1 Essence.'; return; }
+  G.targeting = {equip: host.attached.find(a => a.equip), caster: G.active}; G.msg = '';
+}
+
+/* Flash creatures enter at instant speed, without using the stack */
+function flashCast(i, p){
+  const c = p.hand[i];
+  if(!c) return;
+  if(c.cost > avail(p)){ G.msg = `Needs ${c.cost} Essence.`; return; }
+  p.hand.splice(i, 1); p.spent += c.cost; c.sick = !c.haste;
+  p.field.push(c); applyLords();
+  log(`${p.name} flashed in ${c.name}.`); sfx('tick');
+  if(c.onEnter) applyEffect(c.onEnter, p, opp(), c);
+  checkWin();
+}
+
+/* The computer uses Battle Cry on its strongest creature while it attacks */
+function aiTrick(){
+  const ai = G.players[1 - G.human];
+  const i = ai.hand.findIndex(c => c.effect && c.effect.pumpTurn && c.cost <= avail(ai));
+  if(i < 0) return false;
+  const mine = G.attackers.filter(c => ai.field.includes(c)).sort((a, b) => b.p - a.p);
+  if(!mine.length) return false;
+  const c = ai.hand.splice(i, 1)[0];
+  ai.spent += c.cost;
+  log(`⚡ ${ai.name} cast ${c.name} on ${mine[0].name}.`);
+  pushStack(c, 1 - G.human, mine[0]);
+  return true;
+}
+
+function playable(c, p, v){
+  if(G.targeting || G.over) return false;
+  if(c.flash && c.type === 'creature') return (G.phase === 'main' || G.phase === 'block') && c.cost <= avail(p);
+  if(c.instant) return (G.phase === 'main' || G.phase === 'block') && c.cost <= avail(p);
+  return G.phase === 'main' && G.active === v &&
+    (c.type === 'land' ? p.landsPlayed < 1 : c.cost <= avail(p));
+}
+
+/* Instants can be cast on either player's turn, using untapped Essence */
+function castInstant(i, p){
+  const c = p.hand[i];
+  if(!c) return;
+  if(c.cost > avail(p)){ G.msg = `Needs ${c.cost} Essence.`; return; }
+  const me = G.players.indexOf(p);
+  if(G.stack.length && G.priority !== me){ G.msg = 'Wait: the other player has priority.'; return; }
+  if(c.effect.counter && !G.stack.length){ G.msg = 'Nothing to counter.'; return; }
+  if(c.effect.dmgCreature || c.effect.pumpTurn){
+    if(!G.players.some(q => q.field.length)){ G.msg = 'No creatures on the table to target yet.'; return; }
+    G.targeting = {card: c, caster: me};
+    return;
+  }
+  p.hand.splice(i, 1); p.spent += c.cost;
+  log(`⚡ ${p.name} cast ${c.name}.`);
+  pushStack(c, me, null);
+}
+
+function handleHand(i){
+  if(G.over) return;
+  const v = viewer(), p = G.players[v], c = p.hand[i];
+  if(!c) return;
+  if(G.discardNeed){
+    if(v !== G.active) return;
+    p.hand.splice(i, 1); p.grave.push(c);
+    log(`${p.name} discards ${c.name}.`);
+    if(--G.discardNeed === 0) finishEnd();
+    return;
+  }
+  if(c.flash && c.type === 'creature' && !G.discardNeed){
+    if(G.phase === 'main' || G.phase === 'block') flashCast(i, p);
+    return;
+  }
+  if(c.instant){
+    if(G.phase === 'main' || G.phase === 'block') castInstant(i, p);
+    return;
+  }
+  if(G.active !== v){ G.msg = 'That can only be played on your turn.'; return; }
+  playCard(i);
+}
+
+/* The computer casts an instant at the end of your turn when it can */
+function aiInstantAtEnd(){
+  const ai = G.players[1 - G.human], hu = G.players[G.human];
+  const i = ai.hand.findIndex(c => c.instant && c.cost <= avail(ai) && !c.effect.pumpTurn && !(c.effect.counter && (!G.stack.length || G.stack[G.stack.length - 1].owner !== G.human)) && (!c.effect.dmgCreature || hu.field.length));
+  if(i >= 0) aiCast(i);
+}
+
+function cardEl(c, o = {}){
+  const land = c.type === 'land';
+  const blocking = G.blocks.some(b => b.attacker === c || b.blocker === c) || G.selBlocker === c;
+  const arriving = o.act === 'creature' && !c._seen; // a creature is shown on the table for the first time
+  if(arriving){ c._seen = true; sfx('tick'); }
+  const cls = ['card', c.faction, land ? 'land' : '', (c.tapped || o.tapped) ? 'tapped' : '',
+    G.attackers.includes(c) ? 'sel' : '', blocking ? 'blocker' : '',
+    o.target ? 'target' : '', o.dim ? 'dim' : '', o.act ? 'clickable' : '', o.mini ? 'mini' : '', o.spent ? 'spent' : '',
+    arriving ? 'arrive' : '', c._hit ? 'hit' : '', c._lunge ? 'lunge-' + c._lunge : '', o.ghost ? 'ghost' : '', c.legendary ? 'legend' : ''].filter(Boolean).join(' ');
+  let attrs = '';
+  if(o.act === 'hand') attrs = `data-act="hand" data-i="${o.i}" ${CAN_DRAG ? 'draggable="true"' : ''}`;
+  else if(o.act) attrs = `data-act="creature" data-id="${c.id}" data-owner="${o.owner}" ${CAN_DRAG ? 'draggable="true"' : ''}`;
+  const cost = land ? '' : `<span class="cost">${c.cost}</span>`;
+  const badge = land ? '' : (c.type === 'spell' ? (c.instant ? '<span class="badge">⚡</span>' : '<span class="badge">✨</span>') : '');
+  const pt = c.type === 'creature' ? `<div class="pt"><span>⚔️${c.p}</span><span>♥${c.t}</span></div>` : (!o.mini ? '<div class="pt" aria-hidden="true" style="visibility:hidden"><span>0</span></div>' : '');
+  const dmg = c.dmg ? `<span class="dmg">💥${c.dmg}</span>` : '';
+  const ctr = c.counters ? `<span class="ctr" title="+1/+1 counters">+${c.counters}</span>` : '';
+  const ench = (c.attached && c.attached.length) ? `<span class="ench" title="Has an aura">🪵${c.attached.length}</span>` : '';
+  const sick = c.sick && o.owner === viewer() ? '<span class="sick" title="Summoning sick">💤</span>' : '';
+  const fxHtml = c._fx ? `<span class="fx">${c._fx}</span>` : '';
+  const kindName = land ? 'Land' : c.type === 'equipment' ? 'Equipment' : c.type === 'creature' ? (c.legendary ? 'Legendary' : 'Creature') : c.type === 'artifact' ? 'Artifact'
+                 : (c.effect && c.effect.aura) ? 'Aura' : c.instant ? 'Instant' : 'Sorcery';
+  const tline = (land || o.mini) ? '' : `<div class="tline">${kindName}</div>`;
+  const facHtml = (!land && !o.mini && c.type === 'creature') ? `<span class="fac" title="${FAC_NAME[c.faction]}">${FAC_ICON[c.faction]}</span>` : '';
+  return `<div class="${cls}" ${attrs} data-card="${c.id}">${cost}${badge}${facHtml}${dmg}${ench}${ctr}${sick}${fxHtml}${c.tapped ? `<span class="tapb" title="Tapped">${ico('tap', 14)}</span>` : ''}` +
+         `<div class="art">${c.art}</div>${tline}${abilHtml(c)}<div class="nm">${c.name}</div>${pt}</div>`;
+}
+
+function pileHtml(p){
+  if(!p.lands.length) return '';
+  const VIS = 5, STEP = 14;
+  const n = p.lands.length, tapped = Math.min(p.spent, n);
+  const shown = p.lands.slice(Math.max(0, n - VIS));
+  const k = shown.length, hidden = n - k;
+  let cards = '';
+  shown.forEach((land, j) => {
+    const idx = n - k + j;
+    cards += `<div class="lcard" style="top:${j * STEP}px;z-index:${j + 1}">${cardEl(land, {mini: true, tapped: idx >= n - tapped})}</div>`;
+  });
+  const av = avail(p), total = n + p.field.reduce((s, c) => s + c.ramp, 0);
+  const who = p === G.players[viewer()] ? 'Your' : 'Opponent';
+  return `<div class="pile" title="${who} Essence: ${av} of ${total}" style="height:calc(var(--cw)*.86 + ${(k - 1) * STEP}px)">${cards}` +
+         (hidden ? `<span class="more">+${hidden}</span>` : '') + `</div>`;
+}
+
+function fieldHtml(p, idx){
+  const creatures = p.field.map(c => cardEl(c, {act: 'creature', owner: idx, target: !!G.targeting})).join('');
+  const ghosts = GHOSTS.filter(g => g.owner === idx).map(g => cardEl(g.card, {ghost: true})).join('');
+  return `<div class="lane">${pileHtml(p)}${creatures}${ghosts}</div>`;
+}
+
+function tagHtml(p, isActive){
+  const low = p.life <= 5 ? 'low' : '';
+  const idx = G.players.indexOf(p);
+  return `<div class="tag ${isActive ? 'active' : ''}">` +
+    `<div class="dpile" title="Cards left in deck"><span class="dback"></span><span class="dback"></span><b class="dcount">${p.library.length}</b></div>` +
+    `<div class="gpile" data-act="viewgrave" data-p="${idx}" title="Graveyard"><span class="dback g"></span><b class="dcount">${p.grave.length}</b></div>` +
+    `<div class="life ${low} ${p._hit ? (p._good ? 'healed' : 'hitlife') : ''}" title="Life"><small>Life</small><b>${p.life}</b>${p._fx ? `<span class="fx">${p._fx}</span>` : ''}</div>` +
+  `</div>`;
+}
+
+function phaseHtml(){
+  let step = 'Main 1';
+  if(G.discardNeed || G.endPending) step = 'End';
+  else if(G.phase === 'block' || G.attackers.length) step = 'Combat';
+  else if(G.combatDone) step = 'Main 2';
+  const turnOwner = G.vsAI ? (G.active === G.human ? 'Your turn' : 'Computer’s turn') : `${cur().name}’s turn`;
+  const steps = ['Untap', 'Draw', 'Main 1', 'Combat', 'Main 2', 'End'];
+  const track = steps.map(s => `<span class="${s === step ? 'on' : ''}">${s}</span>`).join('');
+  return `<div class="phase"><div class="turnline">${turnOwner} · Round ${G.turn}</div><div class="track">${track}</div></div>`;
+}
+
+function hintHtml(){
+  if(G.over) return '';
+  if(G.stack.length){
+    const top = G.stack[G.stack.length - 1], who = G.players[top.owner].name;
+    return G.priority === viewer() ? `${who} cast ${top.card.name}. Respond with an instant, or resolve it`
+                                   : `${who} cast ${top.card.name}. Computer may respond…`;
+  }
+  if(G.discardNeed) return `Discard ${G.discardNeed} card${G.discardNeed > 1 ? 's' : ''} to hand size 7`;
+  if(G.damageWindow) return G.priority === viewer() ? 'Cast a trick, or deal damage' : 'Computer may respond…';
+  if(G.msg) return G.msg;
+  if(G.vsAI && G.phase === 'main' && G.active !== G.human) return 'Computer is playing…';
+  if(G.vsAI && G.phase === 'block' && G.active === G.human) return 'Computer is choosing blockers…';
+  if(G.targeting) return 'Pick a creature to target';
+  if(G.phase === 'block') return 'Tap your creature, then the attacker it blocks';
+  if(G.attackers.length) return `${G.attackers.length} attacking`;
+  if(G.combatDone) return 'Combat is over. Pass your turn';
+  return cur().landsPlayed >= 1 ? 'Attack with your creatures, or pass' : 'Play a land or a card, or pick attackers';
+}
+
+function actionsHtml(){
+  const attackReady = G.phase === 'main' && G.attackers.length > 0;
+  const blockReady = G.phase === 'block';
+  const endReady = G.phase === 'main' && !G.attackers.length && !G.targeting;
+  const btn = (act, label, icon, glow, cls = '') =>
+    `<button class="act ${glow ? 'glow' : ''} ${cls}" data-act="${act}" title="${label}" aria-label="${label}">` +
+    `${ico(icon, 22)}<span>${label}</span></button>`;
+  if(G.stack.length) return G.priority === viewer() ? btn('letresolve', 'Resolve', 'end', true) : '';
+  if(G.damageWindow) return G.priority === viewer() ? btn('dmg', 'Damage', 'attack', true) : '';
+  if(G.discardNeed) return '';
+  const allReady = G.phase === 'main' && !G.combatDone && !G.targeting && cur().field.some(c => canAttack(c) && !G.attackers.includes(c));
+  return btn('attack', 'Attack', 'attack', attackReady) +
+         (G.phase === 'main' ? btn('attackall', 'Attack all', 'swords', allReady, 'wide') : '') +
+         (G.phase === 'main' ? btn('ability', 'Ability', 'tap', usableAbilities().length > 0) : '') +
+         (G.phase === 'main' ? btn('equip', 'Equip', 'equip', !!equipHost() && avail(cur()) >= 1) : '') +
+         btn('resolve', 'Confirm', 'shield', blockReady) +
+         btn('cancel', 'Cancel', 'undo', false, 'danger') +
+         btn('end', 'Pass', 'end', endReady);
+}
+
+function renderInspect(){
+  const el = $('#inspect');
+  if(!preview){ el.innerHTML = G ? '<div class="ihint">Hover or hold a card to read it</div>' : ''; return; }
+  const c = preview, land = c.type === 'land';
+  const kind = land ? 'Land' : c.type === 'equipment' ? 'Equipment' : c.type === 'artifact' ? 'Artifact' : c.type === 'spell' ? ((c.effect && c.effect.aura) ? 'Aura' : 'Spell') : 'Creature';
+  const cost = land ? '' : ` · Cost ${c.cost}`;
+  el.innerHTML = `<div class="ibig ${c.faction}">${c.art}</div>` +
+    `<div class="iname">${c.name}</div>` +
+    `<div class="itype">${kind}${cost}</div>` +
+    (c.type === 'creature' ? `<div class="ipt">⚔️ ${c.p} &nbsp; ♥ ${c.t}</div>` : '') +
+    `<div class="itext">${c.text || (land ? 'Gives 1 Essence.' : '')}</div>`;
+}
+
+function overlayHtml(){
+  if(detailCard) return detailHtml(detailCard);
+  if(G && viewGrave !== null){
+    const P = G.players[viewGrave];
+    return `<div class="box"><h2>${P.name}: graveyard</h2><div class="mulhand">` +
+      (P.grave.length ? P.grave.map(c => cardEl(c, {mini: true})).join('') : '<p>Empty</p>') +
+      `</div><button class="menu-btn gold" data-act="closegrave">Close</button></div>`;
+  }
+  if(!G){
+    if(!menu.mode){
+      return `<div class="box">${warLogo('menu-shield', 'menu')}<h2>War of Lands</h2>` +
+        (hasSave() ? `<button class="menu-btn gold" data-act="resume">Resume game<small>Pick up where you left off</small></button>` : '') +
+        `<button class="menu-btn gold" data-act="menuai">Play vs Computer<small>Choose your deck</small></button>` +
+        `<button class="menu-btn" data-act="menuhot">Two players<small>Hotseat, one device</small></button>` +
+        `<button class="menu-btn" data-act="menuguide">Icon guide<small>What each icon means</small></button>` +
+        `<div class="iconrow">` +
+        `<button class="iconbtn${settings.banner ? '' : ' off'}" data-act="togglebanner" aria-label="Banner ${settings.banner ? 'on' : 'off'}" title="Banner">${ico(settings.banner ? 'bannerOn' : 'bannerOff', 26)}</button>` +
+        `<button class="iconbtn${settings.sound ? '' : ' off'}" data-act="togglesound" aria-label="Sound ${settings.sound ? 'on' : 'off'}" title="Sound">${ico(settings.sound ? 'soundOn' : 'soundOff', 26)}</button>` +
+        `<button class="iconbtn${settings.vib ? '' : ' off'}" data-act="togglevib" aria-label="Vibration ${settings.vib ? 'on' : 'off'}" title="Vibration">${ico(settings.vib ? 'vibOn' : 'vibOff', 26)}</button>` +
+        `<button class="iconbtn" data-act="cycletheme" aria-label="Theme: ${THEME_LABEL[settings.theme]}" title="Theme: ${THEME_LABEL[settings.theme]}">${ico({system: 'themeSystem', light: 'sun', dark: 'moon'}[settings.theme], 26)}</button>` +
+        `</div>` +
+        `</div>`;
+    }
+    if(menu.mode === 'guide'){
+      const steps = [
+        'Play a land or a card from your hand.',
+        'Tap your creatures to pick attackers, then Attack, or Attack all.',
+        'To block, tap one of your creatures, then the attacker, and press Confirm.',
+        'Pass ends your turn.'
+      ];
+      const tips = [
+        'Hold or hover a card to read it in full.',
+        'Auras and equipment stay attached to your creatures.',
+        'Battle Cry and Quell are instants.',
+        'Legendary creatures boost your other creatures.',
+        'Ability uses a creature\'s ability. Equip moves your equipment.',
+        'Flash creatures can be cast on either turn.'
+      ];
+      const kws = Object.keys(ABIL_LABEL).map(k => {
+        const t = ABIL_LABEL[k], i = t.indexOf(':');
+        const head = i > -1 ? t.slice(0, i) : t, body = i > -1 ? t.slice(i + 1).trim() : '';
+        return `<div class="kw">${ico(k, 20)}<div>${body ? `<b>${head}</b><span>${body}</span>` : `<span>${head}</span>`}</div></div>`;
+      }).join('');
+      return `<div class="box guide"><h2 class="gtitle">How to play</h2><div class="gbody">` +
+        `<div class="gh">Your turn</div><ol class="gsteps">${steps.map((t, i) => `<li><span class="gnum">${i + 1}</span><span>${t}</span></li>`).join('')}</ol>` +
+        `<div class="gh">Good to know</div><ul class="gtips">${tips.map(t => `<li>${t}</li>`).join('')}</ul>` +
+        `<div class="gh">Icons</div><div class="kwlist">${kws}</div>` +
+        `</div><button class="menu-btn gfoot" data-act="menuback">Back</button></div>`;
+    }
+    const who = menu.mode === 'hot' ? `Player ${menu.picks.length + 1}: choose your deck` : 'Choose your deck';
+    return `<div class="box"><h2>${who}</h2>` +
+      `<button class="menu-btn gold" data-act="pickdeck" data-f="goblin">${FAC_ICON.goblin} Goblins<small>Fast attacks · Mountain</small></button>` +
+      `<button class="menu-btn gold" data-act="pickdeck" data-f="elf">${FAC_ICON.elf} Elves<small>Sturdy creatures · Forest</small></button>` +
+      `<button class="menu-btn gold" data-act="pickdeck" data-f="zombie">${FAC_ICON.zombie} Zombies<small>Lifelink and recovery · Swamp</small></button>` +
+      `<button class="menu-btn gold" data-act="pickdeck" data-f="knight">${FAC_ICON.knight} Knights<small>Flyers and healing · Plains</small></button>` +
+      `<button class="menu-btn gold" data-act="pickdeck" data-f="dragon">${FAC_ICON.dragon} Dragons<small>Big flyers · Mountain</small></button>` +
+      `<button class="menu-btn gold" data-act="pickdeck" data-f="merfolk">${FAC_ICON.merfolk} Merfolk<small>Flyers and card draw · Island</small></button>` +
+      `<button class="menu-btn" data-act="menuback">Back</button></div>`;
+  }
+  if(G.mull){
+    const m = G.mull, who = m.order[m.k], P = G.players[who];
+    if(m.stage === 'coin') return `<div class="box"><h2>${P.name} go first</h2><p>The coin decided who starts.</p>` +
+      `<button class="menu-btn gold" data-act="mullstart">Continue</button></div>`;
+    const lands = P.hand.filter(c => c.type === 'land').length;
+    return `<div class="box"><h2>${P.name}: opening hand</h2><p>${lands} lands, ${P.hand.length - lands} spells.</p>` +
+      `<div class="mulhand">${P.hand.map(c => cardEl(c, {mini: true})).join('')}</div>` +
+      `<button class="menu-btn gold" data-act="keep">Keep</button>` +
+      (m.mulls[who] < 3 ? `<button class="menu-btn" data-act="mull">Mulligan<small>Shuffle in, draw 7, put ${m.mulls[who] + 1} on the bottom</small></button>` : '') +
+      `</div>`;
+  }
+  if(G.over){
+    const [p0, p1] = G.players;
+    if(!G._won){ G._won = true; sfx('win'); }
+    return `<div class="box"><div class="win-emb" style="color:${PAL[G.players[G.over.winner].faction][1]}">${emblem(G.players[G.over.winner].faction)}</div><h2>${G.players[G.over.winner].name} win!</h2><p>${G.over.reason}</p>` +
+      `<p>Round ${G.turn} · ${p0.name} at ${Math.max(0, p0.life)} life · ${p1.name} at ${Math.max(0, p1.life)} life</p>` +
+      `<p>Damage dealt: ${p0.name} ${G.stats.dealt[0]} · ${p1.name} ${G.stats.dealt[1]}</p>` +
+      `<p>Cards drawn: ${G.stats.drawn[0]} · ${G.stats.drawn[1]}</p>` +
+      `<button class="menu-btn gold" data-act="rematch">Play again<small>Same decks</small></button>` +
+      `<button class="menu-btn" data-act="new">Back to menu</button></div>`;
+  }
+  // Two players on one device: hide the table until the other player says they are ready
+  if(!G.vsAI && !G.showPass && G.revealedFor !== viewer()) G.showPass = `Pass the device to ${G.players[viewer()].name}.`;
+  if(G.showPass) return `<div class="box"><p>${G.showPass}</p>` +
+    `<button class="menu-btn gold" data-act="ready">Ready</button></div>`;
+  return '';
+}
+
+/* Combat preview: what happens to each attacker with the blocks chosen so far */
+function blockPreviewHtml(){
+  if(G.over || G.phase !== 'block') return '';
+  const lines = G.attackers.map(a => {
+    const b = G.blocks.find(x => x.attacker === a);
+    if(!b) return `${a.name} hits for ${a.p}`;
+    const r = fightOutcome(a, b.blocker);
+    const aDies = a.dmg + r.aIn >= a.t;
+    const bDies = b.blocker.dmg + r.bIn >= b.blocker.t;
+    const res = aDies && bDies ? 'both die' : aDies ? `${a.name} dies` : bDies ? `${b.blocker.name} dies` : 'both survive';
+    return `${b.blocker.name} blocks ${a.name}: ${res}`;
+  });
+  const hint = G.selBlocker ? `Now click an attacker for ${G.selBlocker.name}` : '';
+  return lines.join('<br>') + (hint ? `<br><i>${hint}</i>` : '');
+}
+
+/* Auto-pass: if you have nothing you can do this turn, pass after a short pause */
+function nothingToDo(){
+  if(!G || G.over || G.phase !== 'main' || G.active !== G.human || G.targeting || G.mull || G.stack.length) return false;
+  const p = G.players[G.human];
+  if(p.landsPlayed < 1 && p.hand.some(c => c.type === 'land')) return false;
+  if(p.hand.some(c => c.type !== 'land' && playable(c, p, G.human))) return false;
+  if(p.field.some(canAttack)) return false;
+  return true;
+}
+function scheduleAutoPass(){
+  if(autoTimer || !G || !G.vsAI || !nothingToDo()) return;
+  $('#hint').textContent = 'Nothing to do. Passing…';
+  autoTimer = setTimeout(() => {
+    autoTimer = null;
+    if(nothingToDo()){ endTurn(); render(); }
+  }, 1400);
+}
+
+function render(){
+  applyTheme();
+  if(pointerDown){ renderPending = true; return; } // don't rebuild the table under a finger; it breaks the tap
+  const ov = $('#overlay');
+  const html = overlayHtml();
+  ov.innerHTML = html;
+  ov.classList.toggle('hidden', !html);
+  // Hotseat hand-over screen is opaque, so the other player's cards can't be seen behind it
+  ov.classList.toggle('solid', !!(G && G.showPass && !G.vsAI && !G.over && !G.mull));
+  $('#homeIcon').innerHTML = ico('home', 22);
+  $('#logIcon').innerHTML = ico('log', 22);
+
+  if(!G){
+    ['#phase', '#oppTag', '#oppHand', '#oppField', '#hint', '#myField', '#myTag', '#actions', '#myHand', '#log']
+      .forEach(s => H(s).innerHTML = '');
+    renderInspect();
+    return;
+  }
+
+  const bk = G.turn + ':' + G.active;
+  if(G.bannerKey !== bk && !G.showPass && !G.mull){ // no banner on top of a hand-over or coin/mulligan screen; it shows after those
+    G.bannerKey = bk;
+    showBanner(G.vsAI ? (G.active === G.human ? 'Your turn' : 'Computer’s turn') : `${cur().name}’s turn`, hintHtml());
+  }
+  const v = viewer();
+  const V = G.players[v], O = G.players[1 - v];
+  H('#phase').innerHTML = phaseHtml();
+  H('#oppTag').innerHTML = tagHtml(O, G.active === 1 - v);
+  H('#oppHand').innerHTML = O.hand.map(() => '<div class="card back"></div>').join('') +
+    `<span class="count" title="Cards in opponent's hand">${O.hand.length}</span>`;
+  H('#oppField').innerHTML = fieldHtml(O, 1 - v);
+  $('#hint').textContent = hintHtml();
+  H('#myField').innerHTML = fieldHtml(V, v);
+  H('#myTag').innerHTML = tagHtml(V, G.active === v);
+  H('#myHand').innerHTML = V.hand.map((c, i) => cardEl(c, {act: 'hand', i, dim: !playable(c, V, v), spent: c.type === 'land' && V.landsPlayed >= 1 && G.active === v})).join('');
+  H('#actions').innerHTML = actionsHtml();
+  H('#log').innerHTML = G.log.slice(-80).reverse().map(l => `<div>${l}</div>`).join('');
+  renderInspect();
+
+  const live = !G.over && !busy();
+  const setDis = (sel, v) => { const el = $(sel); if(el) el.disabled = v; };
+  setDis('[data-act=attack]', !live || G.phase !== 'main' || !G.attackers.length || !!G.targeting || G.stack.length > 0 || G.combatDone || G.discardNeed > 0);
+  setDis('[data-act=attackall]', !live || G.phase !== 'main' || !!G.targeting || G.stack.length > 0 || G.combatDone || G.discardNeed > 0 || !cur().field.some(c => canAttack(c) && !G.attackers.includes(c)));
+  setDis('[data-act=resolve]', !live || G.phase !== 'block' || G.stack.length > 0 || G.damageWindow);
+  setDis('[data-act=end]', !live || G.phase !== 'main' || G.stack.length > 0 || G.discardNeed > 0);
+  setDis('[data-act=cancel]', !G.targeting); // always cancellable while choosing a target, even on the computer's turn
+  $('#preview').innerHTML = G ? (G.stack.length ? stackHtml() : blockPreviewHtml()) : '';
+  drawArrows();
+  scheduleAutoPass();
+}
+
+/* ---------- Input ---------- */
+
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-card]');
+  if(!el) return;
+  const c = ALL.get(+el.dataset.card);
+  if(c && c !== preview){ preview = c; renderInspect(); }
+});
+
+/* Drag a card from your hand onto the table to play it, or drag a creature onto the opponent to attack */
+document.addEventListener('dragstart', e => {
+  const el = e.target.closest && e.target.closest('[data-act]');
+  if(!el || !G) return;
+  if(el.dataset.act === 'hand') dragSrc = {kind: 'hand', i: +el.dataset.i};
+  else if(el.dataset.act === 'creature') dragSrc = {kind: 'creature', id: +el.dataset.id};
+  else return;
+  e.dataTransfer.setData('text/plain', 'card');
+});
+document.addEventListener('dragend', () => { dragSrc = null; });
+document.addEventListener('dragover', e => {
+  if(dragSrc && e.target.closest && e.target.closest('#myField,#oppField,[data-act=creature]')) e.preventDefault();
+});
+document.addEventListener('drop', e => {
+  if(!dragSrc || !G) return;
+  e.preventDefault();
+  const src = dragSrc; dragSrc = null;
+  clearTimeout(autoTimer); autoTimer = null;
+  G.msg = '';
+  const crEl = e.target.closest('[data-act=creature]');
+  const target = crEl ? findCreature(+crEl.dataset.id) : null;
+  const v = viewer();
+  if(src.kind === 'hand'){
+    if(target){
+      handleHand(src.i);
+      if(G.targeting) creatureClick(target, +crEl.dataset.owner);
+    } else if(e.target.closest('#myField')){
+      handleHand(src.i);
+    }
+  } else if(src.kind === 'creature'){
+    const c = findCreature(src.id);
+    const onOpp = e.target.closest('#oppField') || (crEl && +crEl.dataset.owner === 1 - v);
+    if(c && onOpp && G.players[v].field.includes(c) && G.phase === 'main' && G.active === v && !G.combatDone){
+      if(canAttack(c) && !G.attackers.includes(c)) G.attackers.push(c);
+      else if(!canAttack(c)) G.msg = `${c.name} can't attack.`;
+    }
+  }
+  render();
+});
+
+/* Saving: the game is kept in this browser and resumed from the start screen.
+   Only saved between actions (not mid-attack or mid-spell), so the saved state is always complete. */
+const SAVE_KEY = 'warren-grove-save';
+let lastSaved = null;
+function saveable(){
+  return G && !G.over && !G.targeting && !G.stack.length && !G.blocks.length && !G.attackers.length &&
+         !G.showPass && !G.mull && !G.damageWindow && !G.selBlocker && !G.discardNeed;
+}
+function saveGame(){
+  if(!saveable()) return;
+  try{
+    const json = JSON.stringify(G);
+    if(json !== lastSaved){ localStorage.setItem(SAVE_KEY, json); lastSaved = json; }
+  }catch(e){}
+}
+function hasSave(){
+  try{ return !!localStorage.getItem(SAVE_KEY); }catch(e){ return false; }
+}
+function loadGame(){
+  try{
+    const o = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(!o || !o.players) return;
+    G = o; ALL.clear();
+    let max = 0;
+    G.players.forEach(p => ['library','hand','field','grave','lands'].forEach(z => p[z].forEach(c => { ALL.set(c.id, c); max = Math.max(max, c.id); (c.attached || []).forEach(a => { ALL.set(a.id, a); max = Math.max(max, a.id); }); })));
+    uid = max + 1;
+    Object.assign(G, {attackers: [], blocks: [], stack: [], selBlocker: null, targeting: null, showPass: null, damageWindow: false, bannerKey: null});
+    G.discardNeed = G.discardNeed || 0;
+    G.stats = G.stats || {dealt: [0, 0], drawn: [0, 0]};
+    menu = {mode: null, picks: []}; viewGrave = null; preview = null; lastSaved = null;
+  }catch(e){ G = null; }
+}
+
+function handleMenu(act, el){
+  if(act === 'menuai') menu = {mode: 'ai', picks: []};
+  else if(act === 'menuhot') menu = {mode: 'hot', picks: []};
+  else if(act === 'menuback') menu = {mode: null, picks: []};
+  else if(act === 'menuguide') menu = {mode: 'guide', picks: []};
+  else if(act === 'togglebanner') settings.banner = !settings.banner;
+  else if(act === 'cycletheme'){ settings.theme = THEME_NEXT[settings.theme]; applyTheme(); }
+  else if(act === 'togglesound'){ settings.sound = !settings.sound; if(settings.sound) { unlockAudio(); sfx('chime'); } }
+  else if(act === 'togglevib'){ settings.vib = !settings.vib; buzz(30); }
+  else if(act === 'resume'){ loadGame(); }
+  else if(act === 'pickdeck'){
+    menu.picks.push(el.dataset.f);
+    if(menu.mode === 'ai'){
+      const others = ['goblin', 'elf', 'zombie', 'knight', 'dragon', 'merfolk'].filter(f => f !== menu.picks[0]);
+      const comp = others[Math.floor(Math.random() * others.length)];
+      menu = {mode: null, picks: []};
+      startGame(true, 0, [el.dataset.f, comp]);
+    } else if(menu.picks.length === 2){
+      const picks = menu.picks;
+      menu = {mode: null, picks: []};
+      startGame(false, 0, picks);
+    }
+  }
+}
+
+function findCreature(id){ return G ? G.players.flatMap(p => p.field).find(x => x.id === id) : null; }
+
+/* Hold a card on a phone (or touch screen) to read its abilities */
+document.addEventListener('pointerdown', e => {
+  pressed = false;
+  pointerDown = true;
+  clearTimeout(pressTimer);
+  const el = e.target.closest('[data-card]');
+  if(!el || !G) return;
+  pressTimer = setTimeout(() => {
+    pressed = true;
+    pointerDown = false; // the detail view must show while the finger is still down
+    detailCard = ALL.get(+el.dataset.card) || null;
+    render();
+  }, 450);
+});
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => {
+  clearTimeout(pressTimer);
+  pointerDown = false;
+  if(renderPending){ renderPending = false; setTimeout(() => render(), 60); }
+}));
+
+document.addEventListener('click', e => {
+  if(pressed){ pressed = false; return; }
+  const el = e.target.closest('[data-act]');
+  if(!el || el.disabled) return;
+  const act = el.dataset.act;
+  clearTimeout(autoTimer); autoTimer = null;
+
+  if(act === 'log'){ $('#logdrawer').classList.toggle('open'); return; }
+  if(act === 'closedetail'){ detailCard = null; render(); return; }
+  if(['menuai', 'menuhot', 'menuback', 'pickdeck', 'menuguide', 'togglebanner', 'cycletheme', 'togglesound', 'togglevib', 'resume'].includes(act)){ handleMenu(act, el); render(); return; }
+  if(act === 'new'){ G = null; menu = {mode: null, picks: []}; viewGrave = null; render(); return; }
+  if(act === 'rematch' && G && G.over){ const v = G.vsAI, f = G.factions; viewGrave = null; startGame(v, 0, f); render(); return; }
+  if(act === 'viewgrave'){ viewGrave = +el.dataset.p; render(); return; }
+  if(act === 'closegrave'){ viewGrave = null; render(); return; }
+  const allowed = act === 'hand' || act === 'cancel' || act === 'letresolve' || act === 'mullstart' || act === 'keep' || act === 'mull' || act === 'kw' || (act === 'creature' && G.targeting);
+  if(!G || (busy() && !allowed)) return;
+
+  if(el.dataset.card){ const c = ALL.get(+el.dataset.card); if(c) preview = c; }
+  const kwEl = e.target.closest ? e.target.closest('[data-kw]') : null;
+  const kwMsg = kwEl ? ABIL_LABEL[kwEl.dataset.kw] : null;
+  G.msg = '';
+  switch(act){
+    case 'hand': handleHand(+el.dataset.i); break;
+    case 'creature': {
+      const c = G.players.flatMap(p => p.field).find(x => x.id === +el.dataset.id);
+      if(c) creatureClick(c, +el.dataset.owner);
+      break;
+    }
+    case 'attack': declareAttack(); break;
+    case 'ability': useAbility(); break;
+    case 'equip': useEquip(); break;
+    case 'attackall': attackAllCreatures(); break;
+    case 'resolve': if(G.damageWindow) resolveCombat(); else openDamageWindow(); break;
+    case 'dmg': resolveCombat(); break;
+    case 'end': endTurn(); break;
+    case 'cancel':
+      if(G.targeting && G.targeting.abilityOf){ // give back the cost of an ability that was not used
+        const P = G.players[G.targeting.caster];
+        P.spent -= G.targeting.abilityOf.ability.cost; G.targeting.abilityOf.tapped = false;
+      }
+      G.targeting = null; break;
+    case 'ready': G.showPass = null; G.revealedFor = viewer(); break;
+    case 'kw': break;
+    case 'letresolve': resolveTop(); break;
+    case 'mullstart': G.mull.stage = 'decide'; mullStep(); break;
+    case 'keep': G.mull.k++; mullStep(); break;
+    case 'mull': mulligan(G.mull.order[G.mull.k]); break;
+  }
+  if(kwMsg){ G.msg = kwMsg; setTimeout(() => { if(G && G.msg === kwMsg){ G.msg = ''; render(); } }, 2200); }
+  render();
+});
+
+render();
+
+/* Shared steel-and-bronze shield logo. cls sets the size class, idp keeps clip-path ids unique. */
+function warLogo(cls, idp){
+  const SHIELD = 'M0 0 H100 V60 Q100 100 50 120 Q0 100 0 60 Z';
+  const wedgeList = [['#4a525a','50,60 50,-140 223.2,-40'], ['#2c3238','50,60 223.2,-40 223.2,160'], ['#5d666e','50,60 223.2,160 50,260'], ['#353c43','50,60 50,260 -123.2,160'], ['#4d4944','50,60 -123.2,160 -123.2,-40'], ['#2c2a27','50,60 -123.2,-40 50,-140']];
+  const wedges = wedgeList.map((w, i) => `<polygon class="wedge" style="--d:${(1.6 + i * 0.08).toFixed(2)}s" points="${w[1]}" fill="${w[0]}"/>`).join('');
+  const steel = 'stroke="#c9d0d6" fill="#c9d0d6"';
+  const glyphDefs = `
+    <g id="sp-axe"><line x1="-2" y1="12" x2="-2" y2="-10" stroke="#c9d0d6" stroke-width="3" stroke-linecap="round"/><path d="M-2 -12 L8 -8 L8 2 L-2 -2 Z" fill="#c9d0d6"/></g>
+    <g id="sp-bow"><path d="M-8 -12 Q8 0 -8 12" fill="none" stroke="#c9d0d6" stroke-width="3" stroke-linecap="round"/><line x1="-8" y1="-12" x2="-8" y2="12" stroke="#c9d0d6" stroke-width="1"/></g>
+    <g id="sp-scythe"><line x1="-7" y1="12" x2="1" y2="-12" stroke="#c9d0d6" stroke-width="3" stroke-linecap="round"/><path d="M1 -12 Q11 -10 9 2" fill="none" stroke="#c9d0d6" stroke-width="3" stroke-linecap="round"/></g>
+    <g id="sp-lance"><line x1="0" y1="12" x2="0" y2="-8" stroke="#c9d0d6" stroke-width="3" stroke-linecap="round"/><polygon points="0,-14 4,-8 -4,-8" fill="#c9d0d6"/></g>
+    <g id="sp-claw"><path d="M-7 -10 Q-9 0 -4 10" fill="none" stroke="#c9d0d6" stroke-width="2.5" stroke-linecap="round"/><path d="M0 -12 Q-2 0 2 10" fill="none" stroke="#c9d0d6" stroke-width="2.5" stroke-linecap="round"/><path d="M7 -10 Q9 0 4 10" fill="none" stroke="#c9d0d6" stroke-width="2.5" stroke-linecap="round"/></g>
+    <g id="sp-trident"><line x1="0" y1="12" x2="0" y2="-4" stroke="#c9d0d6" stroke-width="3" stroke-linecap="round"/><path d="M-7 -13 L-7 -4 Q0 0 7 -4 L7 -13" fill="none" stroke="#c9d0d6" stroke-width="2.5" stroke-linecap="round"/><line x1="0" y1="-4" x2="0" y2="-14" stroke="#c9d0d6" stroke-width="2.5"/></g>`;
+  // Each weapon: final spot in its wedge, and the offset it flies in from (its nearest side)
+  const weapons = [
+    ['axe', 66, 29, 22.5, -39, 1.9], ['bow', 84, 60, 45, 0, 2.0], ['scythe', 65, 91, 22.5, 39, 2.1],
+    ['lance', 32, 91, -22.5, 39, 2.2], ['claw', 14, 60, -45, 0, 2.3], ['trident', 32, 29, -22.5, -39, 2.4]
+  ].map(([id, x, y, fx, fy, d]) => `<g class="w" style="--fx:${fx}px;--fy:${fy}px;--d:${d}s"><use href="#sp-${id}" transform="translate(${x},${y}) scale(0.8)"/></g>`).join('');
+  return `<svg class="${cls}" viewBox="0 0 100 120" aria-hidden="true">
+    <defs><clipPath id="${idp}Clip"><path d="${SHIELD}"/></clipPath>${glyphDefs}</defs>
+    <g clip-path="url(#${idp}Clip)">${wedges}</g>
+    <path class="wedge" style="--d:1.6s" d="${SHIELD}" fill="none" stroke="#b08d57" stroke-width="3"/>
+    ${weapons}
+    <circle class="wedge" style="--d:2.0s" cx="50" cy="60" r="11" fill="#b08d57" stroke="#2b2216" stroke-width="1.2"/>
+    <text class="wedge" style="--d:2.0s" x="50" y="64" text-anchor="middle" font-family="Georgia, serif" font-size="8" fill="#2b2216">WL</text>
+  </svg>`;
+}
+
+/* Loading screen: five lands drop in, gather, then the steel-and-bronze shield forms and the title fades in. Tap to skip. */
+(function splash(){
+  const names = ['Mountain','Forest','Swamp','Plains','Island'];
+  const cards = names.map((n, i) => `<div class="splash-card" style="--i:${i};--gx:${(2 - i) * 66}px"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${artBody(n)}</svg><span>${n}</span></div>`).join('');
+  const logo = warLogo('splash-shield', 'splash');
+  const el = document.createElement('div');
+  el.className = 'splash';
+  el.innerHTML = `<div class="splash-cards">${cards}</div><div class="splash-logo">${logo}<div class="splash-title">War of Lands</div></div>`;
+  el.addEventListener('click', () => el.remove());
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('out'), 3300);
+  setTimeout(() => el.remove(), 3900);
+})();
+</script>
+</body>
+</html>
