@@ -79,9 +79,9 @@ svg.i{display:block;flex:0 0 auto}
 .card.land .art{background:radial-gradient(#b8a777,#4a3d27)}
 .card .tline{font-size:calc(var(--cw)*.105);font-weight:800;text-transform:uppercase;letter-spacing:.05em;text-align:center;color:#2b2216;background:#0000001f;border-radius:4px;margin-top:3px;padding:1px 0;white-space:nowrap}
 .card.mini .tline{display:none}
-.card.legend{box-shadow:0 0 0 2px #f5c75a,0 0 10px #f5c75a88}
-.card.legend .tline{background:#f5c75a;color:#2b2216}
-.card.legend .tline{letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
+.card.legendary{box-shadow:0 0 0 2px #f5c75a,0 0 10px #f5c75a88}
+.card.legendary .tline{background:#f5c75a;color:#2b2216}
+.card.legendary .tline{letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
 .lane:has(> :nth-child(6)){--cw:calc(clamp(50px,7.4vh,92px)*.85)}
 .card.lunge-up{animation:lungeUp .55s ease-out}
 .card.lunge-down{animation:lungeDown .55s ease-out}
@@ -1050,7 +1050,7 @@ function playCard(i){
   if(c.type === 'creature'){
     p.hand.splice(i, 1); p.spent += c.cost;
     c.sick = !c.haste;
-    p.field.push(c);
+    if(c.legendary) p.field.unshift(c); else p.field.push(c); // legends always sit at the left end of the row
     applyLords();
     log(`${p.name} cast ${c.name}.`);
     if(c.onEnter) applyEffect(c.onEnter, p, opp(), c);
@@ -1544,6 +1544,11 @@ function usableAbilities(){
   return p.field.filter(c => c.ability && !c.tapped && !c.sick && c.ability.cost <= avail(p));
 }
 function equipHost(){ return cur().field.find(c => (c.attached || []).some(a => a.equip)); }
+/* Equip only makes sense when there is equipment to move, the Essence to pay, and another creature to move it to */
+function equipReady(){
+  const host = equipHost();
+  return !!host && avail(cur()) >= 1 && cur().field.some(c => c !== host && c.type === 'creature');
+}
 function useAbility(){
   if(G.over || G.phase !== 'main' || G.targeting || G.stack.length) return;
   const src = usableAbilities()[0];
@@ -1568,7 +1573,7 @@ function flashCast(i, p){
   if(!c) return;
   if(c.cost > avail(p)){ G.msg = `Needs ${c.cost} Essence.`; return; }
   p.hand.splice(i, 1); p.spent += c.cost; c.sick = !c.haste;
-  p.field.push(c); applyLords();
+  if(c.legendary) p.field.unshift(c); else p.field.push(c); applyLords();
   log(`${p.name} flashed in ${c.name}.`); sfx('tick');
   if(c.onEnter) applyEffect(c.onEnter, p, opp(), c);
   checkWin();
@@ -1652,7 +1657,7 @@ function cardEl(c, o = {}){
   const cls = ['card', c.faction, land ? 'land' : '', (c.tapped || o.tapped) ? 'tapped' : '',
     G.attackers.includes(c) ? 'sel' : '', blocking ? 'blocker' : '',
     o.target ? 'target' : '', o.dim ? 'dim' : '', o.act ? 'clickable' : '', o.mini ? 'mini' : '', o.spent ? 'spent' : '',
-    arriving ? 'arrive' : '', c._hit ? 'hit' : '', c._lunge ? 'lunge-' + c._lunge : '', o.ghost ? 'ghost' : '', c.legendary ? 'legend' : ''].filter(Boolean).join(' ');
+    arriving ? 'arrive' : '', c._hit ? 'hit' : '', c._lunge ? 'lunge-' + c._lunge : '', o.ghost ? 'ghost' : '', c.legendary ? 'legendary' : ''].filter(Boolean).join(' ');
   let attrs = '';
   if(o.act === 'hand') attrs = `data-act="hand" data-i="${o.i}" ${CAN_DRAG ? 'draggable="true"' : ''}`;
   else if(o.act) attrs = `data-act="creature" data-id="${c.id}" data-owner="${o.owner}" ${CAN_DRAG ? 'draggable="true"' : ''}`;
@@ -1739,8 +1744,8 @@ function actionsHtml(){
   const attackReady = G.phase === 'main' && G.attackers.length > 0;
   const blockReady = G.phase === 'block';
   const endReady = G.phase === 'main' && !G.attackers.length && !G.targeting;
-  const btn = (act, label, icon, glow, cls = '') =>
-    `<button class="act ${glow ? 'glow' : ''} ${cls}" data-act="${act}" title="${label}" aria-label="${label}">` +
+  const btn = (act, label, icon, glow, cls = '', dis = false) =>
+    `<button class="act ${glow ? 'glow' : ''} ${cls}" data-act="${act}" title="${label}" aria-label="${label}" ${dis ? 'disabled' : ''}>` +
     `${ico(icon, 22)}<span>${label}</span></button>`;
   if(G.stack.length) return G.priority === viewer() ? btn('letresolve', 'Resolve', 'end', true) : '';
   if(G.damageWindow) return G.priority === viewer() ? btn('dmg', 'Damage', 'attack', true) : '';
@@ -1748,8 +1753,8 @@ function actionsHtml(){
   const allReady = G.phase === 'main' && !G.combatDone && !G.targeting && cur().field.some(c => canAttack(c) && !G.attackers.includes(c));
   return btn('attack', 'Attack', 'attack', attackReady) +
          (G.phase === 'main' ? btn('attackall', 'Attack all', 'swords', allReady, 'wide') : '') +
-         (G.phase === 'main' ? btn('ability', 'Ability', 'tap', usableAbilities().length > 0) : '') +
-         (G.phase === 'main' ? btn('equip', 'Equip', 'equip', !!equipHost() && avail(cur()) >= 1) : '') +
+         (G.phase === 'main' ? btn('ability', 'Ability', 'tap', usableAbilities().length > 0, '', !usableAbilities().length) : '') +
+         (G.phase === 'main' ? btn('equip', 'Equip', 'equip', equipReady(), '', !equipReady()) : '') +
          btn('resolve', 'Confirm', 'shield', blockReady) +
          btn('cancel', 'Cancel', 'undo', false, 'danger') +
          btn('end', 'Pass', 'end', endReady);
