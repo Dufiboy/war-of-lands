@@ -244,9 +244,9 @@ svg.i{display:block;flex:0 0 auto}
 .win-emb .emb{width:52px;height:52px;display:block;margin:0 auto 6px}
 .settingsrow .menu-btn{flex:1;margin:0;padding:10px 4px}
 .iconrow{display:flex;gap:10px;justify-content:center;width:100%;margin-top:6px}
-.iconbtn{width:60px;height:60px;border-radius:14px;border:0;background:#3b3020;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
-.iconbtn.off{opacity:.45}
-html[data-theme=light] .iconbtn{background:#efe3c4;color:#2a1f0e}
+.setbtn{width:60px;height:60px;border-radius:14px;border:0;background:#3b3020;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.setbtn.off{opacity:.45}
+html[data-theme=light] .setbtn{background:#efe3c4;color:#2a1f0e}
 /* How-to-play panel: header and footer stay put, the middle scrolls */
 .box.guide{width:min(440px,94vw);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;text-align:left;padding:18px 18px 12px}
 .guide .gtitle{text-align:center;margin:2px 0 4px}
@@ -374,6 +374,9 @@ html[data-theme=light] .lowtag{color:#b3261e}
 .card .pt{font-size:calc(var(--cw)*.13);margin-top:1px}
 .abil svg{width:calc(var(--cw)*.14);height:calc(var(--cw)*.14)}
 .card:not(.mini) .art{flex:1 1 0%;min-height:0}
+body.nogame .iconbtn[data-act="new"], body.nogame .iconbtn[data-act="log"]{display:none}
+/* Installed app on iPhone: paint the safe areas dark green so no beige strip shows at the edges */
+@media (display-mode: standalone){html,html body,html[data-theme=light] body{background:#1f3d2c}}
 </style>
 </head>
 <body>
@@ -1782,10 +1785,10 @@ function overlayHtml(){
         `<button class="menu-btn" data-act="menuguide">Icon guide<small>What each icon means</small></button>` +
         `<button class="menu-btn" data-act="menuinstall">Install the app<small>Add it to your phone or computer</small></button>` +
         `<div class="iconrow">` +
-        `<button class="iconbtn${settings.banner ? '' : ' off'}" data-act="togglebanner" aria-label="Banner ${settings.banner ? 'on' : 'off'}" title="Banner">${ico(settings.banner ? 'bannerOn' : 'bannerOff', 26)}</button>` +
-        `<button class="iconbtn${settings.sound ? '' : ' off'}" data-act="togglesound" aria-label="Sound ${settings.sound ? 'on' : 'off'}" title="Sound">${ico(settings.sound ? 'soundOn' : 'soundOff', 26)}</button>` +
-        `<button class="iconbtn${settings.vib ? '' : ' off'}" data-act="togglevib" aria-label="Vibration ${settings.vib ? 'on' : 'off'}" title="Vibration">${ico(settings.vib ? 'vibOn' : 'vibOff', 26)}</button>` +
-        `<button class="iconbtn" data-act="cycletheme" aria-label="Theme: ${THEME_LABEL[settings.theme]}" title="Theme: ${THEME_LABEL[settings.theme]}">${ico({system: 'themeSystem', light: 'sun', dark: 'moon'}[settings.theme], 26)}</button>` +
+        `<button class="setbtn${settings.banner ? '' : ' off'}" data-act="togglebanner" aria-label="Banner ${settings.banner ? 'on' : 'off'}" title="Banner">${ico(settings.banner ? 'bannerOn' : 'bannerOff', 26)}</button>` +
+        `<button class="setbtn${settings.sound ? '' : ' off'}" data-act="togglesound" aria-label="Sound ${settings.sound ? 'on' : 'off'}" title="Sound">${ico(settings.sound ? 'soundOn' : 'soundOff', 26)}</button>` +
+        `<button class="setbtn${settings.vib ? '' : ' off'}" data-act="togglevib" aria-label="Vibration ${settings.vib ? 'on' : 'off'}" title="Vibration">${ico(settings.vib ? 'vibOn' : 'vibOff', 26)}</button>` +
+        `<button class="setbtn" data-act="cycletheme" aria-label="Theme: ${THEME_LABEL[settings.theme]}" title="Theme: ${THEME_LABEL[settings.theme]}">${ico({system: 'themeSystem', light: 'sun', dark: 'moon'}[settings.theme], 26)}</button>` +
         `</div>` +
         `</div>`;
     }
@@ -1909,6 +1912,7 @@ function scheduleAutoPass(){
 function render(){
   applyTheme();
   if(pointerDown){ renderPending = true; return; } // don't rebuild the table under a finger; it breaks the tap
+  document.body.classList.toggle('nogame', !G); // Home and Log only mean something during a game
   const ov = $('#overlay');
   const html = overlayHtml();
   ov.innerHTML = html;
