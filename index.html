@@ -425,11 +425,11 @@ const POOL = {
     {name:"Blast Crate",    art:"🧨", cost:3, type:"spell", effect:{dmgPlayer:3}, text:"Deal 3 damage to the opponent."}
   ],
   elf: [
-    {name:"Sprout Seeker",       art:"🌱", cost:1, type:"creature", p:1, t:2, firstStrike:true, text:"First strike: deals damage before blockers strike back."},
+    {name:"Sprout Seeker",       art:"🌱", cost:1, type:"creature", p:2, t:2, firstStrike:true, text:"First strike: deals damage before blockers strike back."},
     {name:"Moonglade Druid",     art:"🌙", cost:2, type:"creature", p:1, t:3, ramp:1, ability:{cost:2, counter:true}, text:"Gives 1 extra Essence every turn. {2}, tap: +1/+1 counter on it."},
     {name:"Thessaly, Grove Queen", art:"🌳", cost:5, type:"creature", p:3, t:5, vigilance:true, reach:true, hexproof:true, legendary:true, lord:{p:0,t:1}, text:"Legendary. Vigilance, reach, hexproof. Your other creatures get +0/+1."},
     {name:"Thornwatch Sentinel", art:"🛡️", cost:3, type:"creature", p:2, t:5, defender:true, reach:true, indestructible:true, ability:{cost:2, dmgCreature:1}, text:"Defender. Reach. Indestructible. {2}, tap: 1 damage to a creature."},
-    {name:"Vine Warden",         art:"🌿", cost:4, type:"creature", p:3, t:5, vigilance:true, text:"Vigilance: attacks without tapping. Sturdy vines."},
+    {name:"Vine Warden",         art:"🌿", cost:4, type:"creature", p:4, t:5, vigilance:true, text:"Vigilance: attacks without tapping. Sturdy vines."},
     {name:"Oakheart Elder",      art:"🌳", cost:6, type:"creature", p:5, t:6, onEnter:{heal:4}, text:"When it arrives: gain 4 life."},
     {name:"Healing Dew",         art:"💧", cost:2, type:"spell", instant:true, effect:{heal:4}, text:"Instant. Gain 4 life."},
     {name:"Thorn Snare",         art:"🥀", cost:2, type:"spell", instant:true, effect:{dmgCreature:3}, text:"Instant. Deal 3 damage to a creature."},
@@ -447,10 +447,10 @@ const POOL = {
     {name:"Drain Touch",   art:"🩸", cost:3, type:"spell", effect:{dmgPlayer:2, heal:2}, text:"Deal 2 damage to the opponent and gain 2 life."}
   ],
   knight: [
-    {name:"Squire",           art:"🛡️", cost:1, type:"creature", p:1, t:2, vigilance:true, text:"Vigilance: attacks without tapping, so it can still block."},
-    {name:"Chapel Priest",    art:"⛪", cost:2, type:"creature", p:1, t:3, onEnter:{heal:2}, text:"When it arrives: gain 2 life."},
+    {name:"Squire",           art:"🛡️", cost:1, type:"creature", p:2, t:2, vigilance:true, text:"Vigilance: attacks without tapping, so it can still block."},
+    {name:"Chapel Priest",    art:"⛪", cost:2, type:"creature", p:2, t:3, onEnter:{heal:2}, text:"When it arrives: gain 2 life."},
     {name:"Lancer",           art:"🏇", cost:3, type:"creature", p:3, t:2, firstStrike:true, text:"First strike: deals damage before blockers strike back."},
-    {name:"Royal Herald",     art:"📯", cost:3, type:"creature", p:2, t:2, onEnter:{draw:1}, text:"When it arrives: draw a card."},
+    {name:"Royal Herald",     art:"📯", cost:3, type:"creature", p:2, t:3, onEnter:{draw:1}, text:"When it arrives: draw a card."},
     {name:"Paladin",          art:"⚔️", cost:4, type:"creature", p:3, t:5, lifelink:true, text:"Lifelink: gains life equal to the damage it deals."},
     {name:"Sky Cavalry",      art:"🐎", cost:4, type:"creature", p:3, t:3, flying:true, text:"Flying: only flying or reach creatures can block it."},
     {name:"Charging Warhorse", art:"🐴", cost:5, type:"creature", p:5, t:4, haste:true, trample:true, text:"Haste. Trample: damage beyond the blocker goes to the player."},
