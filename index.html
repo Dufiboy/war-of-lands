@@ -124,7 +124,7 @@ svg.i{display:block;flex:0 0 auto}
 .inspect.empty{display:none}
 
 /* Log drawer */
-.logdrawer{position:absolute;right:20px;top:70px;bottom:20px;width:270px;background:#15110bf5;border-radius:16px;padding:12px;overflow:auto;display:none;z-index:4;font-size:12px;box-shadow:0 10px 30px #000b}
+.logdrawer{position:absolute;right:20px;top:70px;bottom:20px;width:270px;background:#15110b;border-radius:16px;padding:12px;overflow:auto;display:none;z-index:4;font-size:12px;box-shadow:0 10px 30px #000b}
 .logdrawer.open{display:block}
 .logdrawer div{padding:4px 0;border-bottom:1px solid #ffffff14}
 
@@ -226,7 +226,7 @@ svg.i{display:block;flex:0 0 auto}
 .card[data-act]:active{filter:brightness(1.2)}
 .act:active{filter:brightness(1.2)}
 /* A full table keeps each row on one line (scrolls sideways) so it can't cover the buttons */
-.lane{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;padding:12px 8px 6px;max-width:100%;scrollbar-width:none}
+.lane{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;padding:28px 8px 28px;max-width:100%;scrollbar-width:none}
 .lane::-webkit-scrollbar{display:none}
 .lane{gap:14px} /* room for tapped (tilted) creatures so neighbours never touch */
 .lane > :first-child{margin-left:auto}
@@ -312,7 +312,8 @@ html[data-theme=light] .hint,html[data-theme=light] .count,html[data-theme=light
 html[data-theme=light] .tag{background:#fffaf0cc}
 html[data-theme=light] .act{background:#fffaf0;color:#2a1f0e;box-shadow:0 3px 8px #0002}
 html[data-theme=light] .act.danger{background:#f2d3c9}
-html[data-theme=light] .inspect,html[data-theme=light] .logdrawer{background:#fffaf0f5;color:#2a1f0e}
+html[data-theme=light] .inspect{background:#fffaf0f5;color:#2a1f0e}
+html[data-theme=light] .logdrawer{background:#fffaf0;color:#2a1f0e}
 html[data-theme=light] .logdrawer div{border-bottom-color:#0001}
 html[data-theme=light] .box{background:#fffaf0;color:#2a1f0e;box-shadow:0 12px 40px #0003}
 html[data-theme=light] .menu-btn{background:#efe3c4;color:#2a1f0e}
